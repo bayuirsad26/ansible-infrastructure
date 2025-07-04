@@ -1,0 +1,44 @@
+---
+galaxy_info:
+  role_name: common
+  namespace: nusatech
+  author: DevOps Team
+  description: Base configuration role for all servers
+  company: Nusatech Development
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+
+  galaxy_tags:
+    - system
+    - security
+    - hardening
+    - monitoring
+    - logging
+    - ssh
+    - firewall
+
+dependencies:
+  - role: community.general.timezone
+    when: common_timezone is defined
+  - role: geerlingguy.ntp
+    when: common_enable_ntp | bool
+
+collections:
+  - ansible.posix
+  - community.general
+  - community.crypto

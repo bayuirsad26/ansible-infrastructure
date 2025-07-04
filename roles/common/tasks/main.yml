@@ -1,0 +1,48 @@
+---
+- name: Include OS-specific variables
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags: always
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+  tags: always
+
+- name: Include package management tasks
+  ansible.builtin.include_tasks: packages.yml
+  tags: [common, packages]
+
+- name: Include user management tasks
+  ansible.builtin.include_tasks: users.yml
+  tags: [common, users]
+
+- name: Include system configuration tasks
+  ansible.builtin.include_tasks: system.yml
+  tags: [common, system]
+
+- name: Include SSH configuration tasks
+  ansible.builtin.include_tasks: ssh.yml
+  tags: [common, ssh]
+
+- name: Include security hardening tasks
+  ansible.builtin.include_tasks: security.yml
+  tags: [common, security]
+  when: common_enable_security_hardening | bool
+
+- name: Include firewall configuration tasks
+  ansible.builtin.include_tasks: firewall.yml
+  tags: [common, firewall]
+  when: common_enable_firewall | bool
+
+- name: Include logging configuration tasks
+  ansible.builtin.include_tasks: logging.yml
+  tags: [common, logging]
+  when: common_enable_rsyslog | bool
+
+- name: Include monitoring configuration tasks
+  ansible.builtin.include_tasks: monitoring.yml
+  tags: [common, monitoring]
+  when: common_enable_node_exporter | bool
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+  tags: always

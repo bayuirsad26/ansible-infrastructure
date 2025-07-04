@@ -1,0 +1,98 @@
+# SSH Daemon Configuration
+# Managed by Ansible - Do not edit manually
+
+# Network
+Port {{ common_ssh_port }}
+AddressFamily any
+ListenAddress 0.0.0.0
+ListenAddress ::
+
+# Protocol
+Protocol 2
+
+# Host Keys
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+
+# Ciphers and keying
+RekeyLimit default none
+
+# Logging
+SyslogFacility AUTH
+LogLevel INFO
+
+# Authentication
+LoginGraceTime 2m
+PermitRootLogin {{ common_ssh_permit_root_login }}
+StrictModes yes
+MaxAuthTries {{ common_ssh_max_auth_tries }}
+MaxSessions {{ common_ssh_max_sessions }}
+
+PubkeyAuthentication {{ common_ssh_pubkey_authentication }}
+AuthorizedKeysFile .ssh/authorized_keys
+
+# For this to work you will also need host keys in /etc/ssh/ssh_known_hosts
+HostbasedAuthentication no
+IgnoreUserKnownHosts yes
+IgnoreRhosts yes
+
+# Password authentication
+PasswordAuthentication {{ common_ssh_password_authentication }}
+PermitEmptyPasswords {{ common_ssh_permit_empty_passwords }}
+ChallengeResponseAuthentication {{ common_ssh_challenge_response_auth }}
+
+# Kerberos options
+KerberosAuthentication no
+KerberosOrLocalPasswd yes
+KerberosTicketCleanup yes
+KerberosGetAFSToken no
+
+# GSSAPI options
+GSSAPIAuthentication {{ common_ssh_gss_api_authentication }}
+GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing.
+UsePAM yes
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+
+# User restrictions
+{% if common_ssh_allowed_users %}
+AllowUsers {{ common_ssh_allowed_users | join(' ') }}
+{% endif %}
+{% if common_ssh_allowed_groups %}
+AllowGroups {{ common_ssh_allowed_groups | join(' ') }}
+{% endif %}
+
+# Forwarding
+AllowAgentForwarding yes
+AllowTcpForwarding yes
+GatewayPorts no
+X11Forwarding {{ common_ssh_x11_forwarding }}
+X11DisplayOffset 10
+X11UseLocalhost yes
+PermitTTY yes
+PrintMotd no
+PrintLastLog yes
+TCPKeepAlive yes
+UseLogin no
+PermitUserEnvironment no
+Compression delayed
+ClientAliveInterval {{ common_ssh_client_alive_interval }}
+ClientAliveCountMax {{ common_ssh_client_alive_count_max }}
+UseDNS no
+PidFile /var/run/sshd.pid
+MaxStartups 10:30:100
+PermitTunnel no
+ChrootDirectory none
+VersionAddendum none
+
+# SFTP subsystem
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+# Security
+Banner none
+DebianBanner no

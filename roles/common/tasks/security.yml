@@ -1,0 +1,81 @@
+---
+- name: Apply kernel security parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-security.conf
+  loop: "{{ common_kernel_parameters | dict2items }}"
+  tags: [security, sysctl]
+
+- name: Configure security limits
+  community.general.pam_limits:
+    domain: "{{ item.domain }}"
+    limit_type: "{{ item.type }}"
+    limit_item: "{{ item.item }}"
+    value: "{{ item.value }}"
+  loop: "{{ common_security_limits }}"
+  tags: [security, limits]
+
+- name: Install fail2ban
+  ansible.builtin.package:
+    name: fail2ban
+    state: present
+  when: common_enable_fail2ban | bool
+  tags: [security, fail2ban]
+
+- name: Configure fail2ban
+  ansible.builtin.copy:
+    src: security/fail2ban.conf
+    dest: /etc/fail2ban/jail.local
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  when: common_enable_fail2ban | bool
+  notify: restart fail2ban
+  tags: [security, fail2ban]
+
+- name: Enable and start fail2ban
+  ansible.builtin.systemd:
+    name: fail2ban
+    enabled: true
+    state: started
+  when: common_enable_fail2ban | bool
+  tags: [security, fail2ban]
+
+- name: Disable unused services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: false
+    state: stopped
+  loop: "{{ common_unused_services }}"
+  when:
+    - common_disable_unused_services | bool
+    - ansible_facts['services'][item] is defined
+  failed_when: false
+  tags: [security, services]
+
+- name: Set secure permissions on sensitive files
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: '/etc/passwd', mode: '0644' }
+    - { path: '/etc/shadow', mode: '0600' }
+    - { path: '/etc/group', mode: '0644' }
+    - { path: '/etc/gshadow', mode: '0600' }
+    - { path: '/etc/ssh/sshd_config', mode: '0600' }
+    - { path: '/etc/crontab', mode: '0600' }
+  tags: [security, permissions]
+
+- name: Configure umask in profile
+  ansible.builtin.lineinfile:
+    path: /etc/profile
+    regexp: '^umask'
+    line: 'umask 027'
+    state: present
+  tags: [security, umask]

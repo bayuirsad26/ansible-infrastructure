@@ -1,0 +1,77 @@
+---
+- name: Install OpenSSH server
+  ansible.builtin.package:
+    name: "{{ common_ssh_package_name }}"
+    state: present
+  tags: ssh
+
+- name: Backup original SSH configuration
+  ansible.builtin.copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.backup
+    remote_src: true
+    force: false
+    mode: '0600'
+    owner: root
+    group: root
+  tags: ssh
+
+- name: Configure SSH daemon
+  ansible.builtin.template:
+    src: ssh/sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+    validate: '/usr/sbin/sshd -t -f %s'
+  notify: restart sshd
+  tags: ssh
+
+- name: Configure SSH client
+  ansible.builtin.template:
+    src: ssh/ssh_config.j2
+    dest: /etc/ssh/ssh_config
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true
+  tags: ssh
+
+- name: Generate SSH host keys if they don't exist
+  ansible.builtin.command:
+    cmd: ssh-keygen -A
+    creates: /etc/ssh/ssh_host_rsa_key
+  notify: restart sshd
+  tags: ssh
+
+- name: Set proper permissions on SSH host keys
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: '0600'
+  loop:
+    - /etc/ssh/ssh_host_rsa_key
+    - /etc/ssh/ssh_host_ecdsa_key
+    - /etc/ssh/ssh_host_ed25519_key
+  tags: ssh
+
+- name: Set proper permissions on SSH public keys
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - /etc/ssh/ssh_host_rsa_key.pub
+    - /etc/ssh/ssh_host_ecdsa_key.pub
+    - /etc/ssh/ssh_host_ed25519_key.pub
+  tags: ssh
+
+- name: Ensure SSH service is enabled and started
+  ansible.builtin.systemd:
+    name: "{{ common_ssh_service_name }}"
+    enabled: true
+    state: started
+  tags: ssh

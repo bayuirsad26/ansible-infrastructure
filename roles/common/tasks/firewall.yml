@@ -1,0 +1,52 @@
+---
+- name: Install UFW (Ubuntu/Debian)
+  ansible.builtin.package:
+    name: ufw
+    state: present
+  when: ansible_os_family == "Debian"
+  tags: firewall
+
+- name: Install firewalld (RedHat/CentOS)
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags: firewall
+
+- name: Configure UFW default policies (Ubuntu/Debian)
+  community.general.ufw:
+    state: enabled
+    policy: "{{ common_firewall_default_policy }}"
+    direction: "{{ item }}"
+  loop:
+    - incoming
+    - outgoing
+  when: ansible_os_family == "Debian"
+  tags: firewall
+
+- name: Allow specified ports through UFW (Ubuntu/Debian)
+  community.general.ufw:
+    rule: allow
+    port: "{{ item.split('/')[0] }}"
+    proto: "{{ item.split('/')[1] }}"
+  loop: "{{ common_firewall_allowed_ports }}"
+  when: ansible_os_family == "Debian"
+  tags: firewall
+
+- name: Enable and start firewalld (RedHat/CentOS)
+  ansible.builtin.systemd:
+    name: firewalld
+    enabled: true
+    state: started
+  when: ansible_os_family == "RedHat"
+  tags: firewall
+
+- name: Configure firewalld allowed ports (RedHat/CentOS)
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop: "{{ common_firewall_allowed_ports }}"
+  when: ansible_os_family == "RedHat"
+  tags: firewall

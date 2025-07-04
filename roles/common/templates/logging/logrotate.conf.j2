@@ -1,0 +1,94 @@
+# Logrotate configuration for system logs
+# Managed by Ansible - Do not edit manually
+
+/var/log/auth.log {
+    weekly
+    missingok
+    rotate {{ common_log_retention_days | int // 7 }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
+
+/var/log/syslog {
+    daily
+    missingok
+    rotate {{ common_log_retention_days }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
+
+/var/log/kern.log {
+    weekly
+    missingok
+    rotate {{ common_log_retention_days | int // 7 }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
+
+/var/log/daemon.log {
+    weekly
+    missingok
+    rotate {{ common_log_retention_days | int // 7 }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
+
+/var/log/mail.log {
+    weekly
+    missingok
+    rotate {{ common_log_retention_days | int // 7 }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
+
+/var/log/user.log {
+    weekly
+    missingok
+    rotate {{ common_log_retention_days | int // 7 }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
+
+/var/log/all.log {
+    daily
+    missingok
+    rotate {{ common_log_retention_days }}
+    compress
+    delaycompress
+    notifempty
+    create 640 root adm
+    size 100M
+    postrotate
+        systemctl reload rsyslog
+    endscript
+}
