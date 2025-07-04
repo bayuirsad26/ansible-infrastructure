@@ -5,6 +5,7 @@ Base configuration role for all servers in the infrastructure.
 ## Description
 
 This role provides essential system configuration including:
+
 - Package management and updates
 - User and SSH configuration  
 - Security hardening

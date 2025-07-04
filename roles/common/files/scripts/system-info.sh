@@ -32,7 +32,7 @@ print_error() {
 print_section "SYSTEM INFORMATION"
 print_info "Hostname: $(hostname)"
 print_info "Uptime: $(uptime -p)"
-print_info "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
+print_info "OS: $(grep PRETTY_NAME /etc/os-release | cut -d'"' -f2)"
 print_info "Kernel: $(uname -r)"
 print_info "Architecture: $(uname -m)"
 
@@ -69,13 +69,14 @@ done
 
 # Security Information
 print_section "SECURITY STATUS"
-print_info "Failed login attempts (last 24h): $(grep "Failed password" /var/log/auth.log | grep "$(date '+%b %d')" | wc -l 2>/dev/null || echo "0")"
+failed_attempts=$(grep "Failed password" /var/log/auth.log 2>/dev/null | grep -c "$(date '+%b %d')" || echo "0")
+print_info "Failed login attempts (last 24h): $failed_attempts"
 print_info "Last 5 successful logins:"
 last -n 5 | head -5
 
 # System Load
 print_section "SYSTEM LOAD"
-print_info "Load Average: $(cat /proc/loadavg | awk '{print $1" "$2" "$3}')"
+print_info "Load Average: $(awk '{print $1" "$2" "$3}' /proc/loadavg)"
 print_info "Running Processes: $(ps aux | wc -l)"
 
 # Update Information
