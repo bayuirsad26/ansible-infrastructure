@@ -3,6 +3,7 @@
 Essential base system configuration and security hardening.
 
 ## What This Role Does
+
 - ✅ Installs essential packages
 - ✅ Creates admin users with SSH keys
 - ✅ Hardens SSH configuration
@@ -10,16 +11,19 @@ Essential base system configuration and security hardening.
 - ✅ Sets up system basics (timezone, hostname)
 
 ## What This Role Doesn't Do
+
 - ❌ Monitoring (use dedicated monitoring role)
 - ❌ Logging (use dedicated logging role)
 - ❌ Firewall (use dedicated firewall role)
 - ❌ Complex security audit (use dedicated security role)
 
 ## Requirements
+
 - Ansible >= 2.15
 - Target: Ubuntu 20.04+, RHEL/CentOS 8+, Debian 11+
 
 ## Quick Start
+
 ```yaml
 - hosts: all
   become: true
@@ -34,6 +38,7 @@ Essential base system configuration and security hardening.
 ## Variables
 
 ### Essential Variables
+
 ```yaml
 # Admin users to create
 common_admin_users: []
@@ -51,6 +56,7 @@ common_disable_root_login: true
 ```
 
 ## Example Usage
+
 ```yaml
 - role: common
   common_admin_users:
@@ -68,10 +74,12 @@ common_disable_root_login: true
 ```
 
 ## Security Features (Enabled by Default)
+
 - SSH hardening (disable root, key-only auth)
 - Secure sudo configuration
 - Essential security packages
 - Basic system hardening
 
 ## License
+
 MIT - SummitEthic DevOps Team

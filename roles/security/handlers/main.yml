@@ -1,5 +1,5 @@
 ---
-- name: restart auditd
+- name: Restart auditd
   ansible.builtin.systemd_service:
     name: auditd
     state: restarted

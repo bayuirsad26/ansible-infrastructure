@@ -3,6 +3,7 @@
 Modern log management, rotation, and forwarding for centralized logging systems.
 
 ## What This Role Does
+
 - ✅ Configures system logging (rsyslog/journald)
 - ✅ Sets up log rotation policies
 - ✅ Configures log forwarding to centralized systems
@@ -13,6 +14,7 @@ Modern log management, rotation, and forwarding for centralized logging systems.
 - ✅ Installs modern log shippers (Vector/Fluent Bit)
 
 ## What This Role Doesn't Do
+
 - ❌ Log aggregation infrastructure (ELK/Loki servers)
 - ❌ Complex log analysis and parsing (analytics tools)
 - ❌ Log visualization and dashboards (Grafana/Kibana)
@@ -21,11 +23,13 @@ Modern log management, rotation, and forwarding for centralized logging systems.
 - ❌ Log storage infrastructure (infrastructure deployment)
 
 ## Requirements
+
 - Ansible >= 2.15
 - Internet access for downloading log shippers
 - Centralized logging endpoint (optional)
 
 ## Quick Start
+
 ```yaml
 - hosts: all
   become: true
@@ -37,6 +41,7 @@ Modern log management, rotation, and forwarding for centralized logging systems.
 ## Variables
 
 ### Essential Variables
+
 ```yaml
 # Log forwarding
 logging_enable_forwarding: true
@@ -58,6 +63,7 @@ logging_retention_days: 30
 ## Modern Log Shipping
 
 ### Vector (Recommended)
+
 ```yaml
 logging_shipper: "vector"
 logging_vector_config:
@@ -70,6 +76,7 @@ logging_vector_config:
 ```
 
 ### Fluent Bit
+
 ```yaml
 logging_shipper: "fluent-bit"
 logging_fluent_bit_outputs:
@@ -79,12 +86,14 @@ logging_fluent_bit_outputs:
 ```
 
 ### Traditional Rsyslog
+
 ```yaml
 logging_shipper: "rsyslog"
 logging_rsyslog_remote: "logs.example.com:514"
 ```
 
 ## Structured Logging
+
 ```yaml
 # JSON format for modern log analysis
 logging_format: "json"
@@ -97,6 +106,7 @@ logging_json_fields:
 ```
 
 ## Container Integration
+
 ```yaml
 # Docker log management
 logging_container_aware: true
@@ -107,4 +117,5 @@ logging_docker_options:
 ```
 
 ## License
+
 MIT - SummitEthic DevOps Team

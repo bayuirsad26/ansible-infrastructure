@@ -8,8 +8,13 @@ firewall_default_policy: "deny"  # Security-first: deny all, allow specific
 
 # Infrastructure service ports (automatically integrated)
 firewall_infrastructure_ports:
-  - { port: "{{ common_ssh_port | default(22) }}", proto: "tcp", comment: "SSH access" }
-  - { port: "{{ monitoring_node_exporter_port | default(9100) }}", proto: "tcp", comment: "Node Exporter", source: "{{ firewall_monitoring_sources | default('127.0.0.1') }}" }
+  - port: "{{ common_ssh_port | default(22) }}"
+    proto: "tcp"
+    comment: "SSH access"
+  - port: "{{ monitoring_node_exporter_port | default(9100) }}"
+    proto: "tcp"
+    comment: "Node Exporter"
+    source: "{{ firewall_monitoring_sources | default('127.0.0.1') }}"
 
 # Custom firewall rules
 firewall_allow_ports: []

@@ -19,12 +19,12 @@ log "Starting log cleanup (retention: ${RETENTION_DAYS} days)"
 
 # Cleanup old log files
 log "Cleaning up old log files..."
-CLEANED_FILES=$(find $LOG_DIRS -name "*.log.*" -type f -mtime +$RETENTION_DAYS -delete -print | wc -l)
+CLEANED_FILES=$(find $LOG_DIRS -name "*.log.*" -type f -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
 log "Cleaned up $CLEANED_FILES old log files"
 
 # Cleanup old compressed logs
 log "Cleaning up old compressed logs..."
-CLEANED_COMPRESSED=$(find $LOG_DIRS -name "*.gz" -type f -mtime +$RETENTION_DAYS -delete -print | wc -l)
+CLEANED_COMPRESSED=$(find $LOG_DIRS -name "*.gz" -type f -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
 log "Cleaned up $CLEANED_COMPRESSED compressed log files"
 
 # Cleanup empty directories
@@ -41,13 +41,13 @@ fi
 
 # Cleanup Vector logs if present
 if [ -d "/var/log/vector" ]; then
-    VECTOR_CLEANED=$(find /var/log/vector -name "*.log" -type f -mtime +$RETENTION_DAYS -delete -print | wc -l)
+    VECTOR_CLEANED=$(find /var/log/vector -name "*.log" -type f -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
     log "Cleaned up $VECTOR_CLEANED Vector log files"
 fi
 
 # Cleanup Fluent Bit logs if present
 if [ -d "/var/log/td-agent-bit" ]; then
-    FLUENT_CLEANED=$(find /var/log/td-agent-bit -name "*.log" -type f -mtime +$RETENTION_DAYS -delete -print | wc -l)
+    FLUENT_CLEANED=$(find /var/log/td-agent-bit -name "*.log" -type f -mtime +"$RETENTION_DAYS" -delete -print | wc -l)
     log "Cleaned up $FLUENT_CLEANED Fluent Bit log files"
 fi
 

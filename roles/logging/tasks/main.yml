@@ -19,14 +19,14 @@
         dest: /etc/rsyslog.conf
         mode: '0644'
         backup: true
-      notify: restart rsyslog
+      notify: Restart rsyslog
 
     - name: Create custom rsyslog configuration
       ansible.builtin.template:
         src: 50-default.conf.j2
         dest: /etc/rsyslog.d/50-default.conf
         mode: '0644'
-      notify: restart rsyslog
+      notify: Restart rsyslog
 
     - name: Enable and start rsyslog service
       ansible.builtin.systemd_service:
@@ -50,10 +50,10 @@
         - { key: 'SystemMaxFileSize', value: '{{ logging_max_log_size }}' }
         - { key: 'MaxRetentionSec', value: '{{ logging_retention_days * 24 * 3600 }}' }
         - { key: 'ForwardToSyslog', value: '{{ "yes" if logging_enable_rsyslog else "no" }}' }
-      notify: restart journald
+      notify: Restart journald
 
 - name: Install and configure modern log shipper
-  when: 
+  when:
     - logging_enable_forwarding
     - logging_shipper in ['vector', 'fluent-bit']
   tags: [logging, shipper]
@@ -79,7 +79,7 @@
         - "/var/log/{{ logging_shipper }}"
 
 - name: Install Vector log shipper
-  when: 
+  when:
     - logging_enable_forwarding
     - logging_shipper == 'vector'
   tags: [logging, vector]
@@ -107,7 +107,7 @@
         owner: root
         group: root
         mode: '0755'
-      notify: restart vector
+      notify: Restart vector
 
     - name: Configure Vector
       ansible.builtin.template:
@@ -116,7 +116,7 @@
         owner: vector
         group: vector
         mode: '0644'
-      notify: restart vector
+      notify: Restart vector
 
     - name: Create Vector systemd service
       ansible.builtin.template:
@@ -124,11 +124,11 @@
         dest: /etc/systemd/system/vector.service
         mode: '0644'
       notify:
-        - reload systemd
-        - restart vector
+        - Reload systemd
+        - Restart vector
 
 - name: Install Fluent Bit log shipper
-  when: 
+  when:
     - logging_enable_forwarding
     - logging_shipper == 'fluent-bit'
   tags: [logging, fluent-bit]
@@ -143,8 +143,8 @@
     - name: Add Fluent Bit repository
       ansible.builtin.apt_repository:
         repo: >-
-          deb [signed-by=/etc/apt/keyrings/fluentbit.asc] 
-          https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release }} 
+          deb [signed-by=/etc/apt/keyrings/fluentbit.asc]
+          https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release }}
           {{ ansible_distribution_release }} main
         filename: fluent-bit
       when: ansible_os_family == "Debian"
@@ -160,7 +160,7 @@
         src: fluent-bit.conf.j2
         dest: /etc/td-agent-bit/td-agent-bit.conf
         mode: '0644'
-      notify: restart td-agent-bit
+      notify: Restart td-agent-bit
 
 - name: Configure log rotation
   tags: [logging, rotation]
@@ -179,7 +179,7 @@
       when: logging_shipper in ['vector', 'fluent-bit']
 
 - name: Configure container logging
-  when: 
+  when:
     - logging_container_aware
     - ansible_facts['services']['docker.service'] is defined
   tags: [logging, docker]
@@ -190,7 +190,7 @@
         groups: docker
         append: true
       when: logging_shipper in ['vector', 'fluent-bit']
-      notify: "restart {{ logging_shipper }}"
+      notify: "Restart {{ logging_shipper }}"
 
     - name: Configure Docker daemon logging
       ansible.builtin.lineinfile:
@@ -198,7 +198,7 @@
         regexp: '"log-driver":'
         line: '  "log-driver": "json-file",'
         insertafter: '{'
-      notify: restart docker
+      notify: Restart Docker
       when: logging_docker_logs
 
 - name: Setup log cleanup automation
@@ -261,7 +261,7 @@
       ansible.builtin.systemd_service:
         name: "{{ logging_shipper_service_map[logging_shipper] }}"
       register: shipper_status
-      when: 
+      when:
         - logging_enable_forwarding
         - logging_shipper in ['vector', 'fluent-bit']
 

@@ -3,21 +3,25 @@
 Installs Docker CE with security hardening for 2025 standards.
 
 ## What This Role Does
+
 - ✅ Installs Docker CE with compose & buildx plugins
 - ✅ Applies security hardening by default
 - ✅ Manages users and permissions
 - ✅ Configures daemon for production use
 
 ## What This Role Doesn't Do
+
 - ❌ Monitoring (use dedicated monitoring role)
 - ❌ Complex orchestration (use Kubernetes role)
 - ❌ Application deployment (use playbooks)
 
 ## Requirements
+
 - Ansible >= 2.15
 - community.docker collection: `ansible-galaxy collection install community.docker`
 
 ## Quick Start
+
 ```yaml
 - hosts: docker_hosts
   become: true
@@ -29,6 +33,7 @@ Installs Docker CE with security hardening for 2025 standards.
 ## Variables
 
 ### Essential Variables
+
 ```yaml
 # Users to add to docker group
 docker_users: []
@@ -45,6 +50,7 @@ docker_service_enabled: true
 ```
 
 ### Example with Custom Config
+
 ```yaml
 - role: docker
   docker_users: [deploy, developer]
@@ -57,6 +63,7 @@ docker_service_enabled: true
 ```
 
 ## Security Features (Enabled by Default)
+
 - User namespace remapping (dockremap)
 - Secure socket permissions
 - No new privileges flag
@@ -65,6 +72,7 @@ docker_service_enabled: true
 ## Example Playbooks
 
 ### Infrastructure Setup
+
 ```yaml
 ---
 - name: Setup Docker infrastructure
@@ -77,6 +85,7 @@ docker_service_enabled: true
 ```
 
 ### Application Deployment
+
 ```yaml
 ---
 - name: Deploy applications
@@ -91,4 +100,5 @@ docker_service_enabled: true
 ```
 
 ## License
+
 MIT - SummitEthic DevOps Team

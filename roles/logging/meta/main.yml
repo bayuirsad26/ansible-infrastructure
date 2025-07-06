@@ -27,7 +27,7 @@ galaxy_info:
     - logging
     - centralized
     - vector
-    - fluent-bit
+    - fluentbit
     - rsyslog
     - logrotate
 

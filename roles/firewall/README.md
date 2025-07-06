@@ -3,6 +3,7 @@
 Modern network security configuration with OS-appropriate firewall management.
 
 ## What This Role Does
+
 - ✅ Configures OS-appropriate firewalls (UFW/firewalld)
 - ✅ Implements security-first default policies
 - ✅ Manages port access with security groups style rules
@@ -13,6 +14,7 @@ Modern network security configuration with OS-appropriate firewall management.
 - ✅ Automates firewall rule management
 
 ## What This Role Doesn't Do
+
 - ❌ Complex network infrastructure setup (infrastructure tools)
 - ❌ Application-specific firewall rules (application concern)
 - ❌ Advanced network monitoring (monitoring role)
@@ -21,11 +23,13 @@ Modern network security configuration with OS-appropriate firewall management.
 - ❌ Deep packet inspection (specialized security tools)
 
 ## Requirements
+
 - Ansible >= 2.15
 - UFW (Ubuntu/Debian) or firewalld (RedHat/CentOS)
 - Root/sudo access for firewall configuration
 
 ## Quick Start
+
 ```yaml
 - hosts: all
   become: true
@@ -37,6 +41,7 @@ Modern network security configuration with OS-appropriate firewall management.
 ## Variables
 
 ### Essential Variables
+
 ```yaml
 # Basic firewall settings
 firewall_enabled: true
@@ -56,6 +61,7 @@ firewall_docker_integration: true
 ```
 
 ## Security Groups Style Configuration
+
 ```yaml
 # Allow specific ports (security groups style)
 firewall_allow_ports:
@@ -70,6 +76,7 @@ firewall_allow_sources:
 ```
 
 ## Infrastructure Integration
+
 ```yaml
 # Automatically integrates with other roles
 - role: common       # Opens SSH port automatically
@@ -78,6 +85,7 @@ firewall_allow_sources:
 ```
 
 ## Container Awareness
+
 ```yaml
 # Docker integration
 firewall_docker_integration: true
@@ -89,6 +97,7 @@ firewall_docker_integration: true
 ```
 
 ## Cloud-Native Patterns
+
 ```yaml
 # Environment-based rules
 firewall_environment_rules:
@@ -100,4 +109,5 @@ firewall_environment_rules:
 ```
 
 ## License
+
 MIT - SummitEthic DevOps Team

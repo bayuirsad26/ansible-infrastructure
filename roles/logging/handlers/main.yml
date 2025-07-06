@@ -1,29 +1,29 @@
 ---
-- name: restart rsyslog
+- name: Restart rsyslog
   ansible.builtin.systemd_service:
     name: rsyslog
     state: restarted
 
-- name: restart journald
+- name: Restart journald
   ansible.builtin.systemd_service:
     name: systemd-journald
     state: restarted
 
-- name: restart vector
+- name: Restart vector
   ansible.builtin.systemd_service:
     name: vector
     state: restarted
 
-- name: restart td-agent-bit
+- name: Restart td-agent-bit
   ansible.builtin.systemd_service:
     name: td-agent-bit
     state: restarted
 
-- name: restart docker
+- name: Restart Docker
   ansible.builtin.systemd_service:
     name: docker
     state: restarted
 
-- name: reload systemd
+- name: Reload systemd
   ansible.builtin.systemd_service:
     daemon_reload: true

@@ -7,7 +7,7 @@ galaxy_info:
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
-  
+
   platforms:
     - name: Ubuntu
       versions:
@@ -18,7 +18,7 @@ galaxy_info:
       versions:
         - "8"
         - "9"
-    - name: Debian  
+    - name: Debian
       versions:
         - bullseye  # 11
         - bookworm  # 12
@@ -28,7 +28,7 @@ galaxy_info:
     - containerization
     - security
     - devops
-    - 2025
+    - "2025"
 
 dependencies: []
 

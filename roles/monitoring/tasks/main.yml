@@ -54,7 +54,7 @@
     group: root
     mode: '0755'
   when: monitoring_node_exporter_enabled
-  notify: restart node-exporter
+  notify: Restart node-exporter
   tags: [monitoring, install]
 
 - name: Create Node Exporter systemd service
@@ -64,8 +64,8 @@
     mode: '0644'
   when: monitoring_node_exporter_enabled
   notify:
-    - reload systemd
-    - restart node-exporter
+    - Reload systemd
+    - Restart node-exporter
   tags: [monitoring, systemd]
 
 - name: Configure web config for Node Exporter
@@ -75,10 +75,10 @@
     owner: "{{ monitoring_node_exporter_user }}"
     group: "{{ monitoring_node_exporter_user }}"
     mode: '0600'
-  when: 
+  when:
     - monitoring_node_exporter_enabled
     - monitoring_enable_tls
-  notify: restart node-exporter
+  notify: Restart node-exporter
   tags: [monitoring, tls]
 
 - name: Enable and start Node Exporter service
@@ -101,7 +101,7 @@
         name: "{{ monitoring_node_exporter_user }}"
         groups: docker
         append: true
-      notify: restart node-exporter
+      notify: Restart node-exporter
 
     - name: Verify Docker socket access
       ansible.builtin.stat:

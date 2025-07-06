@@ -21,7 +21,7 @@
 - name: Upgrade all packages
   ansible.builtin.package:
     name: "*"
-    state: latest
+    state: present
   when: common_update_packages
   tags: [common, packages]
 
@@ -91,7 +91,7 @@
         mode: '0644'
         backup: true
         validate: 'sshd -t -f %s'
-      notify: restart ssh
+      notify: Restart SSH
 
 - name: Apply basic kernel security parameters
   ansible.posix.sysctl:

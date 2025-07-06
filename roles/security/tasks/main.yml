@@ -40,7 +40,7 @@
         dest: /etc/audit/auditd.conf
         mode: '0640'
         backup: true
-      notify: restart auditd
+      notify: Restart auditd
 
     - name: Configure audit rules
       ansible.builtin.template:
@@ -48,7 +48,7 @@
         dest: /etc/audit/rules.d/security.rules
         mode: '0640'
         backup: true
-      notify: restart auditd
+      notify: Restart auditd
 
     - name: Enable and start auditd service
       ansible.builtin.systemd_service:
@@ -57,7 +57,7 @@
         enabled: true
 
 - name: Apply AppArmor hardening (Ubuntu/Debian)
-  when: 
+  when:
     - security_enable_apparmor
     - ansible_os_family == "Debian"
   tags: [security, apparmor]
@@ -75,7 +75,7 @@
       failed_when: false
 
 - name: Apply SELinux hardening (RedHat/CentOS)
-  when: 
+  when:
     - security_enable_selinux
     - ansible_os_family == "RedHat"
   tags: [security, selinux]

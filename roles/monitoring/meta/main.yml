@@ -28,7 +28,7 @@ galaxy_info:
     - observability
     - prometheus
     - metrics
-    - node-exporter
+    - nodeexporter
 
 dependencies: []
 

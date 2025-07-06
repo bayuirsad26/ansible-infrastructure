@@ -14,7 +14,7 @@ security_kernel_params:
     kernel.kptr_restrict: 2
     net.ipv4.conf.all.log_martians: 1
     net.ipv4.conf.default.log_martians: 1
-    
+
   moderate:
     kernel.dmesg_restrict: 1
     kernel.kptr_restrict: 2
@@ -30,7 +30,7 @@ security_kernel_params:
     fs.suid_dumpable: 0
     fs.protected_hardlinks: 1
     fs.protected_symlinks: 1
-    
+
   strict:
     kernel.dmesg_restrict: 1
     kernel.kptr_restrict: 2
@@ -65,13 +65,13 @@ security_limits:
   basic:
     - { domain: "*", type: "soft", item: "core", value: "0" }
     - { domain: "*", type: "hard", item: "core", value: "0" }
-    
+
   moderate:
     - { domain: "*", type: "soft", item: "core", value: "0" }
     - { domain: "*", type: "hard", item: "core", value: "0" }
     - { domain: "*", type: "soft", item: "nproc", value: "32768" }
     - { domain: "*", type: "hard", item: "nproc", value: "32768" }
-    
+
   strict:
     - { domain: "*", type: "soft", item: "core", value: "0" }
     - { domain: "*", type: "hard", item: "core", value: "0" }
