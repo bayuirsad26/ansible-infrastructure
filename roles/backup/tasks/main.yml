@@ -47,8 +47,10 @@
         timeout: 30
 
     - name: Extract restic
-      ansible.builtin.shell:
-        cmd: "bzip2 -d /tmp/restic_{{ backup_restic_version }}_linux_amd64.bz2"
+      ansible.builtin.unarchive:
+        src: "/tmp/restic_{{ backup_restic_version }}_linux_amd64.bz2"
+        dest: /tmp
+        remote_src: true
         creates: "/tmp/restic_{{ backup_restic_version }}_linux_amd64"
 
     - name: Install restic binary
@@ -77,12 +79,13 @@
       export RESTIC_PASSWORD_FILE="/etc/backup/credentials"
       /usr/local/bin/restic init
     creates: "/var/lib/backup/.restic_initialized"
+  become: true
   become_user: "{{ backup_user }}"
-  when: 
+  when:
     - backup_tool == "restic"
     - backup_destination
   register: backup_init
-  failed_when: 
+  failed_when:
     - backup_init.rc != 0
     - "'already initialized' not in backup_init.stderr"
   tags: [backup, init]
@@ -93,6 +96,7 @@
     state: touch
     owner: "{{ backup_user }}"
     group: "{{ backup_user }}"
+    mode: '0644'
   when: backup_init is succeeded
   tags: [backup, init]
 
@@ -113,7 +117,7 @@
     owner: root
     group: root
     mode: '0755'
-  when: 
+  when:
     - backup_docker_enabled
     - ansible_facts['services']['docker.service'] is defined
   tags: [backup, docker]
@@ -161,7 +165,7 @@
     weekday: "{{ backup_docker_schedule.split()[4] }}"
     job: "/usr/local/bin/docker-backup"
     user: root
-  when: 
+  when:
     - backup_docker_enabled
     - ansible_facts['services']['docker.service'] is defined
   tags: [backup, cron]
@@ -225,7 +229,7 @@
     name: "{{ backup_user }}"
     groups: docker
     append: true
-  when: 
+  when:
     - backup_docker_enabled
     - ansible_facts['services']['docker.service'] is defined
   tags: [backup, docker]
@@ -246,7 +250,7 @@
   register: backup_test
   changed_when: false
   failed_when: backup_test.rc != 0
-  when: 
+  when:
     - backup_system_enabled
     - backup_destination
   tags: [backup, test]

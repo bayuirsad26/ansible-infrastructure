@@ -3,6 +3,7 @@
 Modern automated backup solution with cloud-native storage and container awareness.
 
 ## What This Role Does
+
 - ✅ Configures automated system backups
 - ✅ Cloud storage integration (S3, GCS, Azure Blob)
 - ✅ Container-aware backups (Docker volumes)
@@ -13,6 +14,7 @@ Modern automated backup solution with cloud-native storage and container awarene
 - ✅ Backup monitoring and alerting
 
 ## What This Role Doesn't Do
+
 - ❌ Complex backup infrastructure setup (use backup services)
 - ❌ Application-specific backup logic (application concern)
 - ❌ Backup restoration procedures (operational concern)
@@ -20,11 +22,13 @@ Modern automated backup solution with cloud-native storage and container awarene
 - ❌ Complex backup orchestration (specialized tools)
 
 ## Requirements
+
 - Ansible >= 2.15
 - Cloud storage credentials (S3, GCS, Azure)
 - Root/sudo access for system backups
 
 ## Quick Start
+
 ```yaml
 - hosts: all
   become: true
@@ -36,6 +40,7 @@ Modern automated backup solution with cloud-native storage and container awarene
 ## Variables
 
 ### Essential Variables
+
 ```yaml
 # Backup configuration
 backup_enabled: true
@@ -56,6 +61,7 @@ backup_databases: []
 ```
 
 ## Modern Cloud Storage Integration
+
 ```yaml
 # AWS S3
 backup_destination: "s3:summitethic-backups/production"
@@ -73,6 +79,7 @@ backup_azure_key: "{{ vault_azure_key }}"
 ```
 
 ## Container-Aware Backups
+
 ```yaml
 # Docker integration
 backup_docker_volumes: true
@@ -81,6 +88,7 @@ backup_docker_compose_dirs: ["/opt/apps"]
 ```
 
 ## Database Backups
+
 ```yaml
 backup_databases:
   - name: "app_database"
@@ -91,6 +99,7 @@ backup_databases:
 ```
 
 ## Retention and Security
+
 ```yaml
 backup_retention_days: 30
 backup_encryption: true
@@ -99,4 +108,5 @@ backup_verification: true
 ```
 
 ## License
+
 MIT - SummitEthic DevOps Team

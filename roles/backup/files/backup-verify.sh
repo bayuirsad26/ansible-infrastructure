@@ -27,6 +27,7 @@ fi
 
 # Load environment
 if [[ -f "/etc/backup/credentials" ]]; then
+    # shellcheck source=/etc/backup/credentials
     source /etc/backup/credentials
 else
     log_error "Backup credentials not found"

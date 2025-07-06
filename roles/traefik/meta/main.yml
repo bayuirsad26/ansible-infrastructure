@@ -25,13 +25,13 @@ galaxy_info:
 
   galaxy_tags:
     - traefik
-    - reverse-proxy
-    - load-balancer
+    - reverseproxy
+    - loadbalancer
     - containers
     - docker
     - ssl
     - letsencrypt
-    - service-discovery
+    - servicediscovery
 
 dependencies:
   - role: docker

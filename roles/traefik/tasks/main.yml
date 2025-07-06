@@ -36,7 +36,7 @@
           'password_hash': (item.password | password_hash('bcrypt'))
         }) | list
       }}
-  when: 
+  when:
     - traefik_dashboard_enabled
     - traefik_dashboard_auth
     - traefik_dashboard_users | length > 0
@@ -47,7 +47,7 @@
     src: traefik.yml.j2
     dest: "{{ traefik_data_dir }}/traefik.yml"
     mode: '0644'
-  notify: restart traefik
+  notify: Restart Traefik
   tags: [traefik, config]
 
 - name: Create Traefik dynamic configuration
@@ -55,7 +55,7 @@
     src: dynamic.yml.j2
     dest: "{{ traefik_data_dir }}/dynamic.yml"
     mode: '0644'
-  notify: restart traefik
+  notify: Restart Traefik
   tags: [traefik, config]
 
 - name: Create Traefik Docker Compose file
@@ -63,7 +63,7 @@
     src: docker-compose.yml.j2
     dest: "{{ traefik_data_dir }}/docker-compose.yml"
     mode: '0644'
-  notify: restart traefik
+  notify: Restart Traefik
   tags: [traefik, compose]
 
 - name: Deploy Traefik container
@@ -75,7 +75,7 @@
   tags: [traefik, deploy]
 
 - name: Add firewall rules for Traefik
-  when: 
+  when:
     - traefik_firewall_integration
     - firewall_enabled | default(true)
   tags: [traefik, firewall]

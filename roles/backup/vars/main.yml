@@ -22,12 +22,12 @@ backup_credential_templates:
     AWS_ACCESS_KEY_ID={{ backup_aws_access_key | default('') }}
     AWS_SECRET_ACCESS_KEY={{ backup_aws_secret_key | default('') }}
     RESTIC_PASSWORD={{ backup_password | default(ansible_machine_id) }}
-  
+
   gcs: |
     GOOGLE_PROJECT_ID={{ backup_gcs_project | default('') }}
     GOOGLE_APPLICATION_CREDENTIALS={{ backup_gcs_credentials | default('') }}
     RESTIC_PASSWORD={{ backup_password | default(ansible_machine_id) }}
-  
+
   azure: |
     AZURE_ACCOUNT_NAME={{ backup_azure_account | default('') }}
     AZURE_ACCOUNT_KEY={{ backup_azure_key | default('') }}

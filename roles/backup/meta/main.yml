@@ -25,9 +25,9 @@ galaxy_info:
 
   galaxy_tags:
     - backup
-    - disaster-recovery
-    - data-protection
-    - cloud-storage
+    - disaster
+    - recovery
+    - cloudstorage
     - restic
     - automation
 

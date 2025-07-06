@@ -58,13 +58,13 @@ if docker ps --format "table {{.Names}}" | grep -q "^${TRAEFIK_CONTAINER}$"; the
     fi
     
     # Show connected services
-    SERVICES=$(docker ps --filter "network=${TRAEFIK_NETWORK}" --format "{{.Names}}" | grep -v "^${TRAEFIK_CONTAINER}$" | wc -l)
+    SERVICES=$(docker ps --filter "network=${TRAEFIK_NETWORK}" --format "{{.Names}}" | grep -v "^${TRAEFIK_CONTAINER}$" | grep -c '^' || echo "0")
     log "✓ Connected services: $SERVICES"
     
     # Check Let's Encrypt certificates
     if [ -d "/var/lib/traefik/letsencrypt" ]; then
         if [ -f "/var/lib/traefik/letsencrypt/acme.json" ]; then
-            CERTS=$(grep -o '"domain"' /var/lib/traefik/letsencrypt/acme.json 2>/dev/null | wc -l || echo "0")
+            CERTS=$(grep -c '"domain"' /var/lib/traefik/letsencrypt/acme.json 2>/dev/null || echo "0")
             log "✓ Let's Encrypt certificates: $CERTS"
         else
             log_warn "Let's Encrypt not configured or no certificates yet"

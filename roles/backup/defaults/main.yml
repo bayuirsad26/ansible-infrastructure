@@ -21,7 +21,7 @@ backup_system_enabled: true
 backup_system_schedule: "0 2 * * *"  # Daily at 2 AM
 backup_system_paths:
   - "/etc"
-  - "/home" 
+  - "/home"
   - "/var/log"
   - "/opt"
 

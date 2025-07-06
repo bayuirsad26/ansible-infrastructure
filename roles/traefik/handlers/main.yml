@@ -1,5 +1,6 @@
 ---
-- name: restart traefik
+- name: Restart Traefik
   community.docker.docker_compose_v2:
     project_src: "{{ traefik_data_dir }}"
+    state: present
     restarted: true

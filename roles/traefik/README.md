@@ -3,6 +3,7 @@
 Modern reverse proxy and load balancer designed specifically for containerized applications.
 
 ## What This Role Does
+
 - ✅ Deploys Traefik as a Docker container
 - ✅ Configures automatic service discovery
 - ✅ Sets up Let's Encrypt SSL automation
@@ -13,18 +14,21 @@ Modern reverse proxy and load balancer designed specifically for containerized a
 - ✅ Zero-downtime configuration updates
 
 ## What This Role Doesn't Do
+
 - ❌ Static file serving (use dedicated containers)
 - ❌ Application deployment (use Docker Compose/Kubernetes)
 - ❌ Complex application logic (application concern)
 - ❌ Database or cache management (separate concerns)
 
 ## Requirements
+
 - Ansible >= 2.15
 - Docker role applied first
 - Domain names pointing to server
 - Email for Let's Encrypt registration
 
 ## Quick Start
+
 ```yaml
 - hosts: docker_hosts
   become: true
@@ -38,6 +42,7 @@ Modern reverse proxy and load balancer designed specifically for containerized a
 ## Variables
 
 ### Essential Variables
+
 ```yaml
 # Basic configuration
 traefik_enabled: true
@@ -61,6 +66,7 @@ traefik_letsencrypt_staging: false
 ## Container-Native Routing
 
 ### Automatic Service Discovery
+
 ```yaml
 # Your application containers just need labels:
 version: '3.8'
@@ -75,6 +81,7 @@ services:
 ```
 
 ### Advanced Routing
+
 ```yaml
 # Multiple domains, path-based routing, middleware
 labels:
@@ -87,6 +94,7 @@ labels:
 ```
 
 ## Integration with Infrastructure
+
 ```yaml
 # Perfect integration with your existing roles
 - role: common      # Base system + SSH
@@ -99,6 +107,7 @@ labels:
 ```
 
 ## Modern Benefits
+
 - **Zero Configuration**: Automatic service discovery via Docker labels
 - **SSL Automation**: Let's Encrypt certificates with auto-renewal
 - **Dynamic Updates**: Add/remove services without restart
@@ -107,4 +116,5 @@ labels:
 - **Security First**: Automatic security headers, rate limiting
 
 ## License
+
 MIT - SummitEthic DevOps Team
