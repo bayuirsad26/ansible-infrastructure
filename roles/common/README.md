@@ -1,54 +1,77 @@
-# Common Role
+# Common Role - Modern & Efficient
 
-Base configuration role for all servers in the infrastructure.
+Essential base system configuration and security hardening.
 
-## Description
+## What This Role Does
+- ✅ Installs essential packages
+- ✅ Creates admin users with SSH keys
+- ✅ Hardens SSH configuration
+- ✅ Applies basic security settings
+- ✅ Sets up system basics (timezone, hostname)
 
-This role provides essential system configuration including:
-
-- Package management and updates
-- User and SSH configuration  
-- Security hardening
-- Firewall setup
-- Monitoring agent installation
-- Logging configuration
-- System optimization
+## What This Role Doesn't Do
+- ❌ Monitoring (use dedicated monitoring role)
+- ❌ Logging (use dedicated logging role)
+- ❌ Firewall (use dedicated firewall role)
+- ❌ Complex security audit (use dedicated security role)
 
 ## Requirements
-
 - Ansible >= 2.15
-- Target systems: Ubuntu 20.04+, RHEL/CentOS 8+, Debian 11+
-- Sudo access on target systems
+- Target: Ubuntu 20.04+, RHEL/CentOS 8+, Debian 11+
 
-## Dependencies
-
-- community.general
-- ansible.posix
-- community.crypto
-
-## Example Playbook
-
+## Quick Start
 ```yaml
 - hosts: all
-  become: yes
+  become: true
   roles:
     - role: common
       common_admin_users:
         - name: admin
-          groups: ["sudo"]
           ssh_keys:
-            - "ssh-rsa AAAAB3... admin@example.com"
-      common_enable_firewall: true
-      common_firewall_allowed_ports:
-        - "22/tcp"
-        - "80/tcp"
-        - "443/tcp"
+            - "ssh-rsa AAAAB3... admin@summitethic.com"
 ```
 
+## Variables
+
+### Essential Variables
+```yaml
+# Admin users to create
+common_admin_users: []
+
+# Essential packages to install
+common_packages: []  # Uses sensible defaults
+
+# System settings
+common_timezone: "UTC"
+common_ssh_port: 22
+
+# Security settings (enabled by default)
+common_harden_ssh: true
+common_disable_root_login: true
+```
+
+## Example Usage
+```yaml
+- role: common
+  common_admin_users:
+    - name: devops
+      ssh_keys:
+        - "ssh-rsa AAAAB3... devops@summitethic.com"
+    - name: deploy
+      ssh_keys:
+        - "ssh-rsa AAAAB3... deploy@summitethic.com"
+  common_timezone: "Asia/Jakarta"
+  common_packages:
+    - git
+    - curl
+    - htop
+```
+
+## Security Features (Enabled by Default)
+- SSH hardening (disable root, key-only auth)
+- Secure sudo configuration
+- Essential security packages
+- Basic system hardening
+
 ## License
-
-MIT
-
-## Author Information
-
-DevOps Team - Nusatech Development
+MIT - SummitEthic DevOps Team

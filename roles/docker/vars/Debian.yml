@@ -1,0 +1,17 @@
+---
+# Debian/Ubuntu specific packages and configurations
+
+docker_old_packages:
+  - docker.io
+  - docker-compose
+  - docker-engine
+  - docker
+  - containerd
+  - runc
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin

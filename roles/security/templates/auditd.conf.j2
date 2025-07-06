@@ -1,0 +1,36 @@
+# Audit daemon configuration
+# Managed by Ansible - Do not edit manually
+
+# Log file configuration
+log_file = /var/log/audit/audit.log
+log_format = RAW
+log_group = adm
+priority_boost = 4
+flush = INCREMENTAL_ASYNC
+freq = 50
+max_log_file = {{ security_audit_max_log_file }}
+num_logs = {{ security_audit_num_logs }}
+max_log_file_action = ROTATE
+
+# Disk space and error handling
+space_left = 75
+space_left_action = SYSLOG
+verify_email = yes
+action_mail_acct = root
+admin_space_left = 50
+admin_space_left_action = SUSPEND
+disk_full_action = SUSPEND
+disk_error_action = SUSPEND
+
+# Network settings
+use_libwrap = yes
+tcp_listen_port = 60
+tcp_listen_queue = 5
+tcp_max_per_addr = 1
+tcp_client_ports = 1024-65535
+tcp_client_max_idle = 0
+
+# Performance
+enable_krb5 = no
+krb5_principal = auditd
+krb5_key_file = /etc/audit/audit.key

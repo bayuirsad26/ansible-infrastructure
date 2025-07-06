@@ -1,9 +1,9 @@
 ---
 galaxy_info:
-  role_name: common
+  role_name: security
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Essential base system configuration and security hardening
+  description: Advanced security hardening for production systems
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -24,13 +24,14 @@ galaxy_info:
         - bookworm  # 12
 
   galaxy_tags:
-    - system
     - security
     - hardening
-    - base
-    - essential
+    - audit
+    - compliance
+    - cis
 
-dependencies: []
+dependencies:
+  - role: common
 
 collections:
   - community.general

@@ -1,50 +1,29 @@
 ---
-# OS-specific variables with proper prefixes
-common_ssh_package_name: "{{ common_ssh_package_name_map[ansible_os_family] }}"
-common_ssh_service_name: "{{ common_ssh_service_name_map[ansible_os_family] }}"
-common_node_exporter_version: "1.7.0"
+# OS-agnostic essential packages
+common_essential_packages:
+  - curl
+  - wget
+  - git
+  - vim
+  - htop
+  - unzip
+  - tar
+  - rsync
 
-common_ssh_package_name_map:
-  Debian: openssh-server
-  RedHat: openssh-server
+# Security packages
+common_security_packages:
+  - fail2ban
+  - ufw
 
-common_ssh_service_name_map:
-  Debian: ssh
-  RedHat: sshd
+# OS-specific configurations
+common_sudo_group: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
+common_ssh_service: "{{ 'ssh' if ansible_os_family == 'Debian' else 'sshd' }}"
 
-# Package lists per OS family
-common_packages_map:
-  Debian:
-    - curl
-    - wget
-    - git
-    - vim
-    - htop
-    - tree
-    - unzip
-    - rsync
-    - lsof
-    - strace
-    - tcpdump
-    - net-tools
-    - dnsutils
-    - ca-certificates
-    - gnupg
-    - lsb-release
-  RedHat:
-    - curl
-    - wget
-    - git
-    - vim
-    - htop
-    - tree
-    - unzip
-    - rsync
-    - lsof
-    - strace
-    - tcpdump
-    - net-tools
-    - bind-utils
-    - ca-certificates
-    - gnupg2
-    - redhat-lsb-core
+# Basic kernel security parameters
+common_kernel_security_params:
+  net.ipv4.ip_forward: 0
+  net.ipv4.conf.all.send_redirects: 0
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.all.secure_redirects: 0
+  net.ipv4.icmp_echo_ignore_broadcasts: 1
+  kernel.dmesg_restrict: 1

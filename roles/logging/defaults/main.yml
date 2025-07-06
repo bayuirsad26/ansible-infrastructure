@@ -1,0 +1,35 @@
+---
+# Modern Logging Role - Essential Variables Only
+# Focus on log management and forwarding with sensible defaults
+
+# Log forwarding configuration
+logging_enable_forwarding: false
+logging_destination: ""  # e.g., "logs.example.com:514" or "https://logs.example.com"
+logging_protocol: "tcp"  # tcp, udp, http, https
+
+# Log shipper choice
+logging_shipper: "vector"  # vector, fluent-bit, rsyslog
+logging_shipper_version: "0.39.0"
+
+# Log format and structure
+logging_format: "json"        # json, traditional
+logging_enable_structured: true
+
+# System logging
+logging_enable_rsyslog: true
+logging_enable_journald: true
+
+# Container logging integration
+logging_container_aware: true
+logging_docker_logs: true
+
+# Log retention and rotation
+logging_retention_days: 30
+logging_max_log_size: "100M"
+logging_rotation_frequency: "daily"
+
+# Security logging
+logging_security_events: true
+
+# Log cleanup
+logging_enable_cleanup: true

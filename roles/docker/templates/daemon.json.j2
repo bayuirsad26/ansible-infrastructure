@@ -1,0 +1,22 @@
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+  "storage-driver": "overlay2",
+  "exec-opts": ["native.cgroupdriver=systemd"],
+{% if docker_security_enabled %}
+  "userns-remap": "dockremap",
+  "no-new-privileges": true,
+{% endif %}
+  "live-restore": true,
+  "userland-proxy": false,
+  "ip-forward": false,
+  "iptables": true
+{% if docker_daemon_config %}
+{% for key, value in docker_daemon_config.items() %}
+  ,"{{ key }}": {{ value | to_json }}
+{% endfor %}
+{% endif %}
+}

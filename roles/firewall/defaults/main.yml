@@ -1,0 +1,38 @@
+---
+# Modern Firewall Role - Essential Variables Only
+# Focus on network security with sensible, secure defaults
+
+# Basic firewall configuration
+firewall_enabled: true
+firewall_default_policy: "deny"  # Security-first: deny all, allow specific
+
+# Infrastructure service ports (automatically integrated)
+firewall_infrastructure_ports:
+  - { port: "{{ common_ssh_port | default(22) }}", proto: "tcp", comment: "SSH access" }
+  - { port: "{{ monitoring_node_exporter_port | default(9100) }}", proto: "tcp", comment: "Node Exporter", source: "{{ firewall_monitoring_sources | default('127.0.0.1') }}" }
+
+# Custom firewall rules
+firewall_allow_ports: []
+#  - { port: 80, proto: "tcp", comment: "HTTP" }
+#  - { port: 443, proto: "tcp", comment: "HTTPS" }
+#  - { port: "8000:8100", proto: "tcp", comment: "Application range" }
+
+firewall_allow_sources: []
+#  - { source: "10.0.0.0/8", comment: "Private network access" }
+#  - { source: "192.168.1.100", port: 22, comment: "Admin SSH access" }
+
+# Container integration
+firewall_docker_integration: true
+firewall_docker_bridge: "docker0"
+
+# Monitoring and logging sources
+firewall_monitoring_sources: "127.0.0.1"
+firewall_management_sources: "0.0.0.0/0"
+
+# Rate limiting (basic DDoS protection)
+firewall_enable_rate_limiting: true
+firewall_rate_limit: "6/min"
+
+# Logging
+firewall_enable_logging: true
+firewall_log_level: "low"

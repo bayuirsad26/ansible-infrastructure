@@ -1,0 +1,20 @@
+---
+# Modern Docker Role - Essential Variables Only
+# No configuration sprawl - keep it simple and efficient
+
+# Users to add to docker group
+docker_users: []
+
+# Security hardening (enabled by default for ethical standards)
+docker_security_enabled: true
+
+# Docker daemon custom configuration (optional override)
+# Use this to add custom settings to the default secure configuration
+docker_daemon_config: {}
+
+# Service management
+docker_service_state: started
+docker_service_enabled: true
+
+# Repository configuration
+docker_add_repo: true

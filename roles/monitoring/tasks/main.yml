@@ -1,0 +1,175 @@
+---
+# Modern Monitoring Role - Observability Agent Installation
+# Single task file approach for efficiency
+# Uses FQCN throughout for future-proofing
+
+- name: Create monitoring user
+  ansible.builtin.user:
+    name: "{{ monitoring_node_exporter_user }}"
+    system: true
+    shell: /bin/false
+    home: /var/lib/node-exporter
+    create_home: true
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, user]
+
+- name: Create monitoring directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ monitoring_node_exporter_user }}"
+    group: "{{ monitoring_node_exporter_user }}"
+    mode: '0755'
+  loop:
+    - /var/lib/node-exporter
+    - /etc/node-exporter
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, directories]
+
+- name: Download Node Exporter
+  ansible.builtin.get_url:
+    url: >-
+      https://github.com/prometheus/node_exporter/releases/download/v{{ monitoring_node_exporter_version }}/
+      node_exporter-{{ monitoring_node_exporter_version }}.linux-{{ monitoring_arch_map[ansible_architecture] }}.tar.gz
+    dest: "/tmp/node_exporter-{{ monitoring_node_exporter_version }}.tar.gz"
+    mode: '0644'
+    timeout: 30
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, download]
+
+- name: Extract Node Exporter
+  ansible.builtin.unarchive:
+    src: "/tmp/node_exporter-{{ monitoring_node_exporter_version }}.tar.gz"
+    dest: /tmp
+    remote_src: true
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, extract]
+
+- name: Install Node Exporter binary
+  ansible.builtin.copy:
+    src: "/tmp/node_exporter-{{ monitoring_node_exporter_version }}.linux-{{ monitoring_arch_map[ansible_architecture] }}/node_exporter"
+    dest: /usr/local/bin/node_exporter
+    remote_src: true
+    owner: root
+    group: root
+    mode: '0755'
+  when: monitoring_node_exporter_enabled
+  notify: restart node-exporter
+  tags: [monitoring, install]
+
+- name: Create Node Exporter systemd service
+  ansible.builtin.template:
+    src: node-exporter.service.j2
+    dest: /etc/systemd/system/node-exporter.service
+    mode: '0644'
+  when: monitoring_node_exporter_enabled
+  notify:
+    - reload systemd
+    - restart node-exporter
+  tags: [monitoring, systemd]
+
+- name: Configure web config for Node Exporter
+  ansible.builtin.template:
+    src: web-config.yml.j2
+    dest: /etc/node-exporter/web-config.yml
+    owner: "{{ monitoring_node_exporter_user }}"
+    group: "{{ monitoring_node_exporter_user }}"
+    mode: '0600'
+  when: 
+    - monitoring_node_exporter_enabled
+    - monitoring_enable_tls
+  notify: restart node-exporter
+  tags: [monitoring, tls]
+
+- name: Enable and start Node Exporter service
+  ansible.builtin.systemd_service:
+    name: node-exporter
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, service]
+
+- name: Configure Docker container monitoring
+  when:
+    - monitoring_container_aware
+    - ansible_facts['services']['docker.service'] is defined
+  tags: [monitoring, docker]
+  block:
+    - name: Add monitoring user to docker group
+      ansible.builtin.user:
+        name: "{{ monitoring_node_exporter_user }}"
+        groups: docker
+        append: true
+      notify: restart node-exporter
+
+    - name: Verify Docker socket access
+      ansible.builtin.stat:
+        path: /var/run/docker.sock
+      register: docker_socket
+
+    - name: Set Docker socket permissions for monitoring
+      ansible.builtin.file:
+        path: /var/run/docker.sock
+        group: docker
+        mode: '0660'
+      when: docker_socket.stat.exists
+
+- name: Create service discovery configuration
+  ansible.builtin.template:
+    src: monitoring.yml.j2
+    dest: /etc/node-exporter/monitoring.yml
+    owner: "{{ monitoring_node_exporter_user }}"
+    group: "{{ monitoring_node_exporter_user }}"
+    mode: '0644'
+  when: monitoring_service_discovery
+  tags: [monitoring, discovery]
+
+- name: Install health check script
+  ansible.builtin.copy:
+    src: health-check.sh
+    dest: /usr/local/bin/monitoring-health-check
+    mode: '0755'
+  when: monitoring_health_checks
+  tags: [monitoring, health]
+
+- name: Create health check cron job
+  ansible.builtin.cron:
+    name: "Monitoring health check"
+    minute: "*/5"
+    job: "/usr/local/bin/monitoring-health-check"
+    user: "{{ monitoring_node_exporter_user }}"
+  when: monitoring_health_checks
+  tags: [monitoring, health]
+
+- name: Cleanup downloaded files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/node_exporter-{{ monitoring_node_exporter_version }}.tar.gz"
+    - "/tmp/node_exporter-{{ monitoring_node_exporter_version }}.linux-{{ monitoring_arch_map[ansible_architecture] }}"
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, cleanup]
+
+- name: Verify Node Exporter is responding
+  ansible.builtin.uri:
+    url: "http://{{ monitoring_bind_address }}:{{ monitoring_node_exporter_port }}/metrics"
+    method: GET
+    status_code: 200
+  register: node_exporter_check
+  retries: 3
+  delay: 5
+  when: monitoring_node_exporter_enabled
+  tags: [monitoring, verify]
+
+- name: Display monitoring configuration
+  ansible.builtin.debug:
+    msg:
+      - "Monitoring agents configured successfully"
+      - "Node Exporter: {{ 'Enabled' if monitoring_node_exporter_enabled else 'Disabled' }}"
+      - "Metrics endpoint: http://{{ ansible_default_ipv4.address | default('localhost') }}:{{ monitoring_node_exporter_port }}/metrics"
+      - "Environment: {{ monitoring_environment }}"
+      - "Container monitoring: {{ 'Enabled' if monitoring_container_aware else 'Disabled' }}"
+      - "Service discovery: {{ 'Enabled' if monitoring_service_discovery else 'Disabled' }}"
+  tags: [monitoring, info]

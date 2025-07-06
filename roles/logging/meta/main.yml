@@ -1,9 +1,9 @@
 ---
 galaxy_info:
-  role_name: common
+  role_name: logging
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Essential base system configuration and security hardening
+  description: Modern centralized log management and forwarding for 2025
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -24,14 +24,15 @@ galaxy_info:
         - bookworm  # 12
 
   galaxy_tags:
-    - system
-    - security
-    - hardening
-    - base
-    - essential
+    - logging
+    - centralized
+    - vector
+    - fluent-bit
+    - rsyslog
+    - logrotate
 
 dependencies: []
 
 collections:
-  - community.general
   - ansible.posix
+  - community.general

@@ -1,0 +1,11 @@
+---
+# System logging packages
+logging_system_packages:
+  - rsyslog
+  - logrotate
+
+# Log shipper service mapping
+logging_shipper_service_map:
+  vector: "vector"
+  fluent-bit: "td-agent-bit"
+  rsyslog: "rsyslog"

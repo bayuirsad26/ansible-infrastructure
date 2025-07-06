@@ -1,0 +1,41 @@
+# Service discovery configuration for monitoring
+# Managed by Ansible - Do not edit manually
+
+instance:
+  hostname: "{{ ansible_hostname }}"
+  fqdn: "{{ ansible_fqdn }}"
+  ip_address: "{{ ansible_default_ipv4.address | default('unknown') }}"
+  environment: "{{ monitoring_environment }}"
+  
+labels:
+  environment: "{{ monitoring_environment }}"
+  hostname: "{{ ansible_hostname }}"
+  os_family: "{{ ansible_os_family }}"
+  architecture: "{{ ansible_architecture }}"
+{% for key, value in monitoring_labels.items() %}
+  {{ key }}: "{{ value }}"
+{% endfor %}
+
+endpoints:
+  node_exporter:
+    port: {{ monitoring_node_exporter_port }}
+    path: "/metrics"
+    protocol: "{{ 'https' if monitoring_enable_tls else 'http' }}"
+{% if monitoring_container_aware and ansible_facts['services']['docker.service'] is defined %}
+  docker:
+    enabled: true
+    socket: "/var/run/docker.sock"
+{% endif %}
+
+collectors:
+  - filesystem
+  - loadavg
+  - meminfo
+  - netdev
+  - stat
+  - time
+  - systemd
+  - processes
+{% if monitoring_container_aware %}
+  - docker
+{% endif %}

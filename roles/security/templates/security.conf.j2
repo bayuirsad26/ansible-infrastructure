@@ -1,0 +1,21 @@
+# Security limits configuration
+# Managed by Ansible - Do not edit manually
+
+# Core dumps
+* soft core 0
+* hard core 0
+
+# Process limits
+* soft nproc 32768
+* hard nproc 32768
+
+# File limits
+* soft nofile 65536
+* hard nofile 65536
+
+{% if security_compliance_level == 'strict' %}
+# Strict security limits
+* hard maxlogins 2
+* soft priority 0
+* hard priority 0
+{% endif %}

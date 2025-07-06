@@ -1,0 +1,32 @@
+---
+# Modern Security Role - Essential Variables Only
+# Focus on advanced hardening with sensible defaults
+
+# Audit logging configuration
+security_enable_audit: true
+security_audit_rules: "moderate"  # strict, moderate, basic
+security_audit_max_log_file: 50
+security_audit_num_logs: 5
+
+# Kernel security hardening
+security_kernel_hardening: true
+
+# Compliance level - determines how strict security measures are
+security_compliance_level: "moderate"  # strict, moderate, basic
+
+# Security scanning and monitoring
+security_enable_scanning: true
+security_scan_schedule: "0 2 * * 0"  # Weekly at 2 AM
+
+# AppArmor/SELinux
+security_enable_apparmor: true
+security_enable_selinux: true
+
+# File system security
+security_harden_filesystem: true
+
+# Security limits
+security_enable_limits: true
+
+# Disable unnecessary services
+security_disable_unused_services: true

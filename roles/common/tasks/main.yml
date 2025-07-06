@@ -1,48 +1,120 @@
 ---
-- name: Include OS-specific variables
-  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
-  tags: always
+# Modern Common Role - Single Task File
+# Essential base system configuration only
+# Uses FQCN throughout for future-proofing
 
-- name: Gather service facts
-  ansible.builtin.service_facts:
-  tags: always
-
-- name: Include package management tasks
-  ansible.builtin.include_tasks: packages.yml
-  tags: [common, packages]
-
-- name: Include user management tasks
-  ansible.builtin.include_tasks: users.yml
-  tags: [common, users]
-
-- name: Include system configuration tasks
-  ansible.builtin.include_tasks: system.yml
+- name: Set system timezone
+  community.general.timezone:
+    name: "{{ common_timezone }}"
   tags: [common, system]
 
-- name: Include SSH configuration tasks
-  ansible.builtin.include_tasks: ssh.yml
-  tags: [common, ssh]
+- name: Set system hostname
+  ansible.builtin.hostname:
+    name: "{{ common_hostname }}"
+  tags: [common, system]
 
-- name: Include security hardening tasks
-  ansible.builtin.include_tasks: security.yml
+- name: Update package cache
+  ansible.builtin.package:
+    update_cache: true
+  tags: [common, packages]
+
+- name: Upgrade all packages
+  ansible.builtin.package:
+    name: "*"
+    state: latest
+  when: common_update_packages
+  tags: [common, packages]
+
+- name: Install essential packages
+  ansible.builtin.package:
+    name: "{{ common_essential_packages + common_packages }}"
+    state: present
+  tags: [common, packages]
+
+- name: Install security packages
+  ansible.builtin.package:
+    name: "{{ common_security_packages }}"
+    state: present
+  when: common_install_security_packages
+  tags: [common, security, packages]
+
+- name: Ensure sudo group exists
+  ansible.builtin.group:
+    name: "{{ common_sudo_group }}"
+    state: present
+  tags: [common, users]
+
+- name: Create admin users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    groups: "{{ common_sudo_group }}"
+    shell: /bin/bash
+    create_home: true
+    append: true
+  loop: "{{ common_admin_users }}"
+  tags: [common, users]
+
+- name: Set up SSH keys for admin users
+  ansible.posix.authorized_key:
+    user: "{{ item.0.name }}"
+    key: "{{ item.1 }}"
+    state: present
+    exclusive: false
+  loop: "{{ common_admin_users | subelements('ssh_keys', skip_missing=True) }}"
+  tags: [common, users, ssh]
+
+- name: Configure sudo access for admin users
+  ansible.builtin.template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ item.name }}"
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  loop: "{{ common_admin_users }}"
+  tags: [common, users, security]
+
+- name: Harden SSH configuration
+  when: common_harden_ssh
+  tags: [common, ssh, security]
+  block:
+    - name: Backup original SSH config
+      ansible.builtin.copy:
+        src: /etc/ssh/sshd_config
+        dest: /etc/ssh/sshd_config.backup
+        remote_src: true
+        force: false
+        mode: '0600'
+
+    - name: Configure SSH daemon
+      ansible.builtin.template:
+        src: sshd_config.j2
+        dest: /etc/ssh/sshd_config
+        mode: '0644'
+        backup: true
+        validate: 'sshd -t -f %s'
+      notify: restart ssh
+
+- name: Apply basic kernel security parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+  loop: "{{ common_kernel_security_params | dict2items }}"
   tags: [common, security]
-  when: common_enable_security_hardening | bool
 
-- name: Include firewall configuration tasks
-  ansible.builtin.include_tasks: firewall.yml
-  tags: [common, firewall]
-  when: common_enable_firewall | bool
+- name: Ensure SSH service is running
+  ansible.builtin.systemd_service:
+    name: "{{ common_ssh_service }}"
+    state: started
+    enabled: true
+  tags: [common, ssh, service]
 
-- name: Include logging configuration tasks
-  ansible.builtin.include_tasks: logging.yml
-  tags: [common, logging]
-  when: common_enable_rsyslog | bool
-
-- name: Include monitoring configuration tasks
-  ansible.builtin.include_tasks: monitoring.yml
-  tags: [common, monitoring]
-  when: common_enable_node_exporter | bool
-
-- name: Flush handlers
-  ansible.builtin.meta: flush_handlers
-  tags: always
+- name: Display common role completion info
+  ansible.builtin.debug:
+    msg:
+      - "Common role applied successfully"
+      - "Admin users: {{ common_admin_users | map(attribute='name') | list | join(', ') if common_admin_users else 'None' }}"
+      - "SSH hardening: {{ 'Enabled' if common_harden_ssh else 'Disabled' }}"
+      - "SSH port: {{ common_ssh_port }}"
+      - "Timezone: {{ common_timezone }}"
+  tags: [common, info]

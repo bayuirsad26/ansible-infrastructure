@@ -1,0 +1,177 @@
+---
+# Modern Security Role - Advanced Hardening
+# Single task file approach for efficiency
+# Uses FQCN throughout for future-proofing
+
+- name: Install security packages
+  ansible.builtin.package:
+    name: "{{ security_packages }}"
+    state: present
+  tags: [security, packages]
+
+- name: Configure advanced kernel security parameters
+  when: security_kernel_hardening
+  tags: [security, kernel]
+  block:
+    - name: Apply advanced kernel security settings
+      ansible.posix.sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        reload: true
+        sysctl_file: /etc/sysctl.d/99-security-hardening.conf
+      loop: "{{ security_kernel_params[security_compliance_level] | dict2items }}"
+
+    - name: Disable unused network protocols
+      ansible.builtin.lineinfile:
+        path: /etc/modprobe.d/blacklist-security.conf
+        line: "blacklist {{ item }}"
+        create: true
+        mode: '0644'
+      loop: "{{ security_disabled_protocols }}"
+
+- name: Configure audit logging
+  when: security_enable_audit
+  tags: [security, audit]
+  block:
+    - name: Configure auditd daemon
+      ansible.builtin.template:
+        src: auditd.conf.j2
+        dest: /etc/audit/auditd.conf
+        mode: '0640'
+        backup: true
+      notify: restart auditd
+
+    - name: Configure audit rules
+      ansible.builtin.template:
+        src: audit.rules.j2
+        dest: /etc/audit/rules.d/security.rules
+        mode: '0640'
+        backup: true
+      notify: restart auditd
+
+    - name: Enable and start auditd service
+      ansible.builtin.systemd_service:
+        name: auditd
+        state: started
+        enabled: true
+
+- name: Apply AppArmor hardening (Ubuntu/Debian)
+  when: 
+    - security_enable_apparmor
+    - ansible_os_family == "Debian"
+  tags: [security, apparmor]
+  block:
+    - name: Install AppArmor utilities
+      ansible.builtin.package:
+        name: apparmor-utils
+        state: present
+
+    - name: Enable AppArmor profiles
+      ansible.builtin.command:
+        cmd: aa-enforce /etc/apparmor.d/*
+      register: apparmor_result
+      changed_when: "'Setting' in apparmor_result.stdout"
+      failed_when: false
+
+- name: Apply SELinux hardening (RedHat/CentOS)
+  when: 
+    - security_enable_selinux
+    - ansible_os_family == "RedHat"
+  tags: [security, selinux]
+  block:
+    - name: Set SELinux to enforcing mode
+      ansible.posix.selinux:
+        policy: targeted
+        state: enforcing
+
+    - name: Install SELinux management tools
+      ansible.builtin.package:
+        name: policycoreutils-python-utils
+        state: present
+
+- name: Harden file system permissions
+  when: security_harden_filesystem
+  tags: [security, filesystem]
+  block:
+    - name: Set secure permissions on critical system files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode }}"
+      loop: "{{ security_critical_files }}"
+
+    - name: Find and secure world-writable files
+      ansible.builtin.shell: |
+        find {{ item }} -type f -perm -002 -exec chmod o-w {} \; 2>/dev/null || true
+      loop: "{{ security_critical_directories }}"
+      changed_when: false
+
+- name: Configure security limits
+  when: security_enable_limits
+  tags: [security, limits]
+  block:
+    - name: Apply security limits
+      community.general.pam_limits:
+        domain: "{{ item.domain }}"
+        limit_type: "{{ item.type }}"
+        limit_item: "{{ item.item }}"
+        value: "{{ item.value }}"
+      loop: "{{ security_limits[security_compliance_level] }}"
+
+    - name: Configure additional security settings
+      ansible.builtin.template:
+        src: security.conf.j2
+        dest: /etc/security/limits.d/99-security.conf
+        mode: '0644'
+
+- name: Disable unnecessary services
+  when: security_disable_unused_services
+  tags: [security, services]
+  block:
+    - name: Stop and disable unused services
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop: "{{ security_unused_services }}"
+      failed_when: false
+
+- name: Setup security scanning
+  when: security_enable_scanning
+  tags: [security, scanning]
+  block:
+    - name: Create security scan script
+      ansible.builtin.copy:
+        src: security-scan.sh
+        dest: /usr/local/bin/security-scan
+        mode: '0755'
+
+    - name: Schedule security scanning
+      ansible.builtin.cron:
+        name: "Security scan"
+        minute: "0"
+        hour: "2"
+        weekday: "0"
+        job: "/usr/local/bin/security-scan"
+        user: root
+
+- name: Verify security configuration
+  tags: [security, verify]
+  block:
+    - name: Check auditd status
+      ansible.builtin.systemd_service:
+        name: auditd
+      register: auditd_status
+      when: security_enable_audit
+
+    - name: Display security hardening summary
+      ansible.builtin.debug:
+        msg:
+          - "Security hardening applied successfully"
+          - "Compliance level: {{ security_compliance_level }}"
+          - "Audit logging: {{ 'Enabled' if security_enable_audit else 'Disabled' }}"
+          - "Kernel hardening: {{ 'Enabled' if security_kernel_hardening else 'Disabled' }}"
+          - "Security scanning: {{ 'Enabled' if security_enable_scanning else 'Disabled' }}"
+          - "AppArmor/SELinux: {{ 'Configured' if (security_enable_apparmor or security_enable_selinux) else 'Skipped' }}"

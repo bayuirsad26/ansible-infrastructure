@@ -1,0 +1,84 @@
+# Rsyslog configuration for {{ ansible_hostname }}
+# Managed by Ansible - Do not edit manually
+
+#################
+#### MODULES ####
+#################
+
+module(load="imuxsock") # provides support for local system logging
+module(load="imklog")   # provides kernel logging support
+{% if logging_enable_forwarding and logging_shipper == 'rsyslog' %}
+module(load="imtcp")    # TCP input module for remote logging
+{% endif %}
+
+###########################
+#### GLOBAL DIRECTIVES ####
+###########################
+
+# Use default timestamp format
+$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat
+
+{% if logging_format == "json" %}
+# JSON template for structured logging
+template(name="json" type="list") {
+    constant(value="{")
+    constant(value="\"timestamp\":\"")
+    property(name="timereported" dateFormat="rfc3339")
+    constant(value="\",\"hostname\":\"")
+    property(name="hostname")
+    constant(value="\",\"tag\":\"")
+    property(name="syslogtag" format="json")
+    constant(value="\",\"severity\":\"")
+    property(name="syslogseverity-text")
+    constant(value="\",\"facility\":\"")
+    property(name="syslogfacility-text")
+    constant(value="\",\"message\":\"")
+    property(name="msg" format="json")
+    constant(value="\"}")
+    constant(value="\n")
+}
+{% endif %}
+
+# Set default permissions
+$FileOwner root
+$FileGroup adm
+$FileCreateMode 0640
+$DirCreateMode 0755
+$Umask 0022
+
+# Work directory
+$WorkDirectory /var/spool/rsyslog
+
+###############
+#### RULES ####
+###############
+
+# Emergency messages to all users
+*.emerg                         :omusrmsg:*
+
+{% if logging_format == "json" %}
+# JSON formatted system logs
+*.*;auth,authpriv.none          /var/log/syslog;json
+auth,authpriv.*                 /var/log/auth.log;json
+kern.*                          /var/log/kern.log;json
+mail.*                          /var/log/mail.log;json
+{% else %}
+# Traditional formatted system logs
+*.*;auth,authpriv.none          -/var/log/syslog
+auth,authpriv.*                 /var/log/auth.log
+kern.*                          -/var/log/kern.log
+mail.*                          -/var/log/mail.log
+{% endif %}
+
+daemon.*                        -/var/log/daemon.log
+user.*                          -/var/log/user.log
+lpr.*                           -/var/log/lpr.log
+cron.*                          -/var/log/cron.log
+
+{% if logging_enable_forwarding and logging_shipper == 'rsyslog' and logging_destination %}
+# Forward logs to remote server
+*.*                             @@{{ logging_destination }}
+{% endif %}
+
+# Include all config files in /etc/rsyslog.d/
+$IncludeConfig /etc/rsyslog.d/*.conf

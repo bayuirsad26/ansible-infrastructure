@@ -1,9 +1,9 @@
 ---
 galaxy_info:
-  role_name: common
+  role_name: firewall
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Essential base system configuration and security hardening
+  description: Modern network security configuration with OS-appropriate firewall management
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -24,11 +24,12 @@ galaxy_info:
         - bookworm  # 12
 
   galaxy_tags:
-    - system
+    - firewall
     - security
-    - hardening
-    - base
-    - essential
+    - network
+    - ufw
+    - firewalld
+    - iptables
 
 dependencies: []
 

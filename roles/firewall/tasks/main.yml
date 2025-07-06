@@ -1,0 +1,208 @@
+---
+# Modern Firewall Role - Network Security Configuration
+# Single task file approach for efficiency
+# Uses FQCN throughout for future-proofing
+
+- name: Gather firewall facts
+  ansible.builtin.setup:
+    filter: ansible_os_family
+  tags: [firewall, facts]
+
+- name: Install UFW firewall (Debian/Ubuntu)
+  ansible.builtin.package:
+    name: ufw
+    state: present
+  when: 
+    - ansible_os_family == "Debian"
+    - firewall_enabled
+  tags: [firewall, install]
+
+- name: Install firewalld (RedHat/CentOS)
+  ansible.builtin.package:
+    name: firewalld
+    state: present
+  when: 
+    - ansible_os_family == "RedHat"
+    - firewall_enabled
+  tags: [firewall, install]
+
+- name: Configure UFW firewall (Debian/Ubuntu)
+  when: 
+    - ansible_os_family == "Debian"
+    - firewall_enabled
+  tags: [firewall, ufw]
+  block:
+    - name: Reset UFW to defaults
+      community.general.ufw:
+        state: reset
+      
+    - name: Set UFW default policies
+      community.general.ufw:
+        direction: "{{ item.direction }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { direction: "incoming", policy: "{{ firewall_default_policy }}" }
+        - { direction: "outgoing", policy: "allow" }
+        - { direction: "routed", policy: "{{ firewall_default_policy }}" }
+
+    - name: Configure UFW logging
+      community.general.ufw:
+        logging: "{{ firewall_log_level }}"
+      when: firewall_enable_logging
+
+    - name: Allow infrastructure service ports
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port | string }}"
+        proto: "{{ item.proto }}"
+        src: "{{ item.source | default('any') }}"
+        comment: "{{ item.comment }}"
+      loop: "{{ firewall_infrastructure_ports }}"
+
+    - name: Allow custom ports
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port | string }}"
+        proto: "{{ item.proto }}"
+        src: "{{ item.source | default('any') }}"
+        comment: "{{ item.comment | default('Custom rule') }}"
+      loop: "{{ firewall_allow_ports }}"
+
+    - name: Allow from specific sources
+      community.general.ufw:
+        rule: allow
+        src: "{{ item.source }}"
+        port: "{{ item.port | default('any') | string }}"
+        comment: "{{ item.comment | default('Source rule') }}"
+      loop: "{{ firewall_allow_sources }}"
+
+    - name: Enable rate limiting for SSH
+      community.general.ufw:
+        rule: limit
+        port: "{{ common_ssh_port | default(22) }}"
+        proto: tcp
+        comment: "SSH rate limiting"
+      when: firewall_enable_rate_limiting
+
+    - name: Configure Docker integration (UFW)
+      when: 
+        - firewall_docker_integration
+        - ansible_facts['services']['docker.service'] is defined
+      block:
+        - name: Allow Docker bridge traffic
+          community.general.ufw:
+            rule: allow
+            interface_in: "{{ firewall_docker_bridge }}"
+            comment: "Docker bridge traffic"
+
+        - name: Allow Docker container communication
+          community.general.ufw:
+            rule: allow
+            interface_out: "{{ firewall_docker_bridge }}"
+            comment: "Docker container outbound"
+
+    - name: Enable UFW firewall
+      community.general.ufw:
+        state: enabled
+
+- name: Configure firewalld (RedHat/CentOS)
+  when: 
+    - ansible_os_family == "RedHat"
+    - firewall_enabled
+  tags: [firewall, firewalld]
+  block:
+    - name: Start and enable firewalld service
+      ansible.builtin.systemd_service:
+        name: firewalld
+        state: started
+        enabled: true
+
+    - name: Set firewalld default zone
+      ansible.posix.firewalld:
+        zone: public
+        state: enabled
+        permanent: true
+        immediate: true
+
+    - name: Configure firewalld default policy
+      ansible.posix.firewalld:
+        zone: public
+        target: "{{ 'DROP' if firewall_default_policy == 'deny' else 'ACCEPT' }}"
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: Allow infrastructure service ports
+      ansible.posix.firewalld:
+        zone: public
+        port: "{{ item.port }}/{{ item.proto }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop: "{{ firewall_infrastructure_ports }}"
+
+    - name: Allow custom ports
+      ansible.posix.firewalld:
+        zone: public
+        port: "{{ item.port }}/{{ item.proto }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop: "{{ firewall_allow_ports }}"
+
+    - name: Allow from specific sources
+      ansible.posix.firewalld:
+        zone: public
+        source: "{{ item.source }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop: "{{ firewall_allow_sources }}"
+
+    - name: Configure Docker integration (firewalld)
+      when: 
+        - firewall_docker_integration
+        - ansible_facts['services']['docker.service'] is defined
+      block:
+        - name: Allow Docker bridge interface
+          ansible.posix.firewalld:
+            zone: trusted
+            interface: "{{ firewall_docker_bridge }}"
+            permanent: true
+            immediate: true
+            state: enabled
+
+        - name: Enable masquerading for Docker
+          ansible.posix.firewalld:
+            zone: public
+            masquerade: true
+            permanent: true
+            immediate: true
+            state: enabled
+
+- name: Create firewall status script
+  ansible.builtin.copy:
+    src: firewall-status.sh
+    dest: /usr/local/bin/firewall-status
+    mode: '0755'
+  tags: [firewall, monitoring]
+
+- name: Verify firewall status
+  ansible.builtin.command:
+    cmd: /usr/local/bin/firewall-status
+  register: firewall_status_result
+  changed_when: false
+  tags: [firewall, verify]
+
+- name: Display firewall configuration
+  ansible.builtin.debug:
+    msg:
+      - "Firewall configuration applied successfully"
+      - "Firewall type: {{ 'UFW' if ansible_os_family == 'Debian' else 'firewalld' }}"
+      - "Default policy: {{ firewall_default_policy }}"
+      - "Infrastructure ports: {{ firewall_infrastructure_ports | length }}"
+      - "Custom ports: {{ firewall_allow_ports | length }}"
+      - "Docker integration: {{ 'Enabled' if firewall_docker_integration else 'Disabled' }}"
+      - "Rate limiting: {{ 'Enabled' if firewall_enable_rate_limiting else 'Disabled' }}"
+      - "Status: {{ firewall_status_result.stdout | default('Unknown') }}"
+  tags: [firewall, info]
