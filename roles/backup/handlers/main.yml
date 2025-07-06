@@ -1,0 +1,6 @@
+---
+- name: restart backup service
+  ansible.builtin.systemd_service:
+    name: backup
+    state: restarted
+  when: false  # No service to restart - backups run via cron

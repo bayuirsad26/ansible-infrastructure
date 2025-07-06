@@ -1,0 +1,266 @@
+---
+# Modern Backup Role - Automated Data Protection
+# Single task file approach for efficiency
+# Uses FQCN throughout for future-proofing
+
+- name: Install backup tools
+  ansible.builtin.package:
+    name: "{{ backup_packages }}"
+    state: present
+  tags: [backup, packages]
+
+- name: Create backup user
+  ansible.builtin.user:
+    name: "{{ backup_user }}"
+    system: true
+    shell: /bin/bash
+    home: /var/lib/backup
+    create_home: true
+    groups: "{{ backup_additional_groups }}"
+  tags: [backup, user]
+
+- name: Create backup directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: '0750'
+  loop:
+    - /var/lib/backup
+    - /etc/backup
+    - /var/log/backup
+    - /tmp/backup
+  tags: [backup, directories]
+
+- name: Install restic backup tool
+  when: backup_tool == "restic"
+  tags: [backup, restic]
+  block:
+    - name: Download restic
+      ansible.builtin.get_url:
+        url: >-
+          https://github.com/restic/restic/releases/download/v{{ backup_restic_version }}/
+          restic_{{ backup_restic_version }}_linux_amd64.bz2
+        dest: "/tmp/restic_{{ backup_restic_version }}_linux_amd64.bz2"
+        mode: '0644'
+        timeout: 30
+
+    - name: Extract restic
+      ansible.builtin.shell:
+        cmd: "bzip2 -d /tmp/restic_{{ backup_restic_version }}_linux_amd64.bz2"
+        creates: "/tmp/restic_{{ backup_restic_version }}_linux_amd64"
+
+    - name: Install restic binary
+      ansible.builtin.copy:
+        src: "/tmp/restic_{{ backup_restic_version }}_linux_amd64"
+        dest: /usr/local/bin/restic
+        remote_src: true
+        owner: root
+        group: root
+        mode: '0755'
+
+- name: Configure cloud storage credentials
+  ansible.builtin.template:
+    src: backup-credentials.j2
+    dest: /etc/backup/credentials
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: '0600'
+  when: backup_destination
+  tags: [backup, credentials]
+
+- name: Initialize backup repository
+  ansible.builtin.shell:
+    cmd: |
+      export RESTIC_REPOSITORY="{{ backup_destination }}"
+      export RESTIC_PASSWORD_FILE="/etc/backup/credentials"
+      /usr/local/bin/restic init
+    creates: "/var/lib/backup/.restic_initialized"
+  become_user: "{{ backup_user }}"
+  when: 
+    - backup_tool == "restic"
+    - backup_destination
+  register: backup_init
+  failed_when: 
+    - backup_init.rc != 0
+    - "'already initialized' not in backup_init.stderr"
+  tags: [backup, init]
+
+- name: Mark repository as initialized
+  ansible.builtin.file:
+    path: "/var/lib/backup/.restic_initialized"
+    state: touch
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+  when: backup_init is succeeded
+  tags: [backup, init]
+
+- name: Configure system backup script
+  ansible.builtin.template:
+    src: system-backup.sh.j2
+    dest: /usr/local/bin/system-backup
+    owner: root
+    group: root
+    mode: '0755'
+  when: backup_system_enabled
+  tags: [backup, system]
+
+- name: Configure Docker backup script
+  ansible.builtin.template:
+    src: docker-backup.sh.j2
+    dest: /usr/local/bin/docker-backup
+    owner: root
+    group: root
+    mode: '0755'
+  when: 
+    - backup_docker_enabled
+    - ansible_facts['services']['docker.service'] is defined
+  tags: [backup, docker]
+
+- name: Configure database backup scripts
+  ansible.builtin.template:
+    src: database-backup.sh.j2
+    dest: "/usr/local/bin/{{ item.name }}-backup"
+    owner: root
+    group: root
+    mode: '0755'
+  loop: "{{ backup_databases }}"
+  when: backup_databases | length > 0
+  tags: [backup, database]
+
+- name: Create backup exclusion list
+  ansible.builtin.template:
+    src: backup-exclude.j2
+    dest: /etc/backup/exclude.txt
+    owner: "{{ backup_user }}"
+    group: "{{ backup_user }}"
+    mode: '0644'
+  tags: [backup, config]
+
+- name: Schedule system backups
+  ansible.builtin.cron:
+    name: "System backup"
+    minute: "{{ backup_system_schedule.split()[0] }}"
+    hour: "{{ backup_system_schedule.split()[1] }}"
+    day: "{{ backup_system_schedule.split()[2] }}"
+    month: "{{ backup_system_schedule.split()[3] }}"
+    weekday: "{{ backup_system_schedule.split()[4] }}"
+    job: "/usr/local/bin/system-backup"
+    user: root
+  when: backup_system_enabled
+  tags: [backup, cron]
+
+- name: Schedule Docker backups
+  ansible.builtin.cron:
+    name: "Docker backup"
+    minute: "{{ backup_docker_schedule.split()[0] }}"
+    hour: "{{ backup_docker_schedule.split()[1] }}"
+    day: "{{ backup_docker_schedule.split()[2] }}"
+    month: "{{ backup_docker_schedule.split()[3] }}"
+    weekday: "{{ backup_docker_schedule.split()[4] }}"
+    job: "/usr/local/bin/docker-backup"
+    user: root
+  when: 
+    - backup_docker_enabled
+    - ansible_facts['services']['docker.service'] is defined
+  tags: [backup, cron]
+
+- name: Schedule database backups
+  ansible.builtin.cron:
+    name: "{{ item.name }} database backup"
+    minute: "{{ item.schedule.split()[0] }}"
+    hour: "{{ item.schedule.split()[1] }}"
+    day: "{{ item.schedule.split()[2] }}"
+    month: "{{ item.schedule.split()[3] }}"
+    weekday: "{{ item.schedule.split()[4] }}"
+    job: "/usr/local/bin/{{ item.name }}-backup"
+    user: root
+  loop: "{{ backup_databases }}"
+  when: backup_databases | length > 0
+  tags: [backup, cron]
+
+- name: Install backup verification script
+  ansible.builtin.copy:
+    src: backup-verify.sh
+    dest: /usr/local/bin/backup-verify
+    owner: root
+    group: root
+    mode: '0755'
+  when: backup_verification
+  tags: [backup, verify]
+
+- name: Install backup monitoring script
+  ansible.builtin.copy:
+    src: backup-monitor.sh
+    dest: /usr/local/bin/backup-monitor
+    owner: root
+    group: root
+    mode: '0755'
+  when: backup_monitoring
+  tags: [backup, monitor]
+
+- name: Schedule backup verification
+  ansible.builtin.cron:
+    name: "Backup verification"
+    minute: "0"
+    hour: "6"
+    weekday: "1"
+    job: "/usr/local/bin/backup-verify"
+    user: "{{ backup_user }}"
+  when: backup_verification
+  tags: [backup, verify]
+
+- name: Schedule backup monitoring
+  ansible.builtin.cron:
+    name: "Backup monitoring"
+    minute: "*/30"
+    job: "/usr/local/bin/backup-monitor"
+    user: "{{ backup_user }}"
+  when: backup_monitoring
+  tags: [backup, monitor]
+
+- name: Add backup user to docker group
+  ansible.builtin.user:
+    name: "{{ backup_user }}"
+    groups: docker
+    append: true
+  when: 
+    - backup_docker_enabled
+    - ansible_facts['services']['docker.service'] is defined
+  tags: [backup, docker]
+
+- name: Cleanup downloaded files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/restic_{{ backup_restic_version }}_linux_amd64.bz2"
+    - "/tmp/restic_{{ backup_restic_version }}_linux_amd64"
+  when: backup_tool == "restic"
+  tags: [backup, cleanup]
+
+- name: Test backup configuration
+  ansible.builtin.command:
+    cmd: /usr/local/bin/system-backup --dry-run
+  register: backup_test
+  changed_when: false
+  failed_when: backup_test.rc != 0
+  when: 
+    - backup_system_enabled
+    - backup_destination
+  tags: [backup, test]
+
+- name: Display backup configuration
+  ansible.builtin.debug:
+    msg:
+      - "Backup configuration applied successfully"
+      - "Backup tool: {{ backup_tool }}"
+      - "Destination: {{ backup_destination if backup_destination else 'Local only' }}"
+      - "System backups: {{ 'Enabled' if backup_system_enabled else 'Disabled' }}"
+      - "Docker backups: {{ 'Enabled' if backup_docker_enabled else 'Disabled' }}"
+      - "Database backups: {{ backup_databases | length }} configured"
+      - "Retention: {{ backup_retention_days }} days"
+      - "Encryption: {{ 'Enabled' if backup_encryption else 'Disabled' }}"
+      - "Verification: {{ 'Enabled' if backup_verification else 'Disabled' }}"
+  tags: [backup, info]

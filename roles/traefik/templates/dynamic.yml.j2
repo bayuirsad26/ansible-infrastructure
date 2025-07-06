@@ -1,0 +1,79 @@
+# Traefik dynamic configuration
+# Managed by Ansible - Do not edit manually
+
+http:
+  middlewares:
+{% if traefik_security_headers %}
+    security-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+          - POST
+          - DELETE
+        accessControlMaxAge: 100
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+        referrerPolicy: "same-origin"
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+        customResponseHeaders:
+          X-Robots-Tag: "noindex,nofollow,nosnippet,noarchive,notranslate,noimageindex"
+        sslRedirect: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        contentTypeNosniff: true
+        browserXssFilter: true
+        frameOptions: "SAMEORIGIN"
+{% endif %}
+
+{% if traefik_rate_limiting %}
+    rate-limit:
+      rateLimit:
+        burst: 100
+        period: 1s
+        average: {{ traefik_default_rate_limit.split('/')[0] }}
+{% endif %}
+
+{% if traefik_dashboard_enabled and traefik_dashboard_auth and traefik_dashboard_users_hashed | default([]) | length > 0 %}
+    dashboard-auth:
+      basicAuth:
+        users:
+{% for user in traefik_dashboard_users_hashed %}
+          - "{{ user.username }}:{{ user.password_hash }}"
+{% endfor %}
+{% endif %}
+
+  routers:
+{% if traefik_dashboard_enabled %}
+    dashboard:
+      rule: "Host(`{{ traefik_dashboard_subdomain }}.{{ traefik_domain }}`)"
+      service: api@internal
+{% if traefik_letsencrypt_enabled %}
+      tls:
+        certResolver: {{ traefik_letsencrypt_resolver }}
+{% endif %}
+{% if traefik_dashboard_auth and traefik_dashboard_users_hashed | default([]) | length > 0 %}
+      middlewares:
+        - dashboard-auth
+{% if traefik_security_headers %}
+        - security-headers
+{% endif %}
+{% endif %}
+{% endif %}
+
+  services: {}
+
+tls:
+  options:
+    default:
+      sslStrategies:
+        - "tls.SniStrict"
+      minVersion: "VersionTLS12"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"

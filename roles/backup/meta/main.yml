@@ -1,0 +1,38 @@
+---
+galaxy_info:
+  role_name: backup
+  namespace: summitethic
+  author: SummitEthic DevOps Team
+  description: Modern automated backup solution with cloud-native storage
+  company: SummitEthic
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal    # 20.04
+        - jammy    # 22.04
+        - noble    # 24.04
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: Debian
+      versions:
+        - bullseye  # 11
+        - bookworm  # 12
+
+  galaxy_tags:
+    - backup
+    - disaster-recovery
+    - data-protection
+    - cloud-storage
+    - restic
+    - automation
+
+dependencies: []
+
+collections:
+  - ansible.posix
+  - community.general

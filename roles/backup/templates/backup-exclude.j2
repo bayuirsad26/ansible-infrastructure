@@ -1,0 +1,56 @@
+# Backup exclusion patterns
+# Managed by Ansible - Do not edit manually
+
+# Temporary files
+/tmp/*
+/var/tmp/*
+*.tmp
+*.temp
+
+# Cache directories
+/var/cache/*
+/home/*/.cache/*
+/root/.cache/*
+
+# Log files (very large)
+*.log
+/var/log/*.log.*
+/var/log/*/*.log.*
+
+# Runtime files
+/var/run/*
+/run/*
+*.pid
+*.sock
+
+# Mount points
+/proc/*
+/sys/*
+/dev/*
+/media/*
+/mnt/*
+
+# Backup destinations
+/backup/*
+/var/backups/*
+
+# Docker specific
+/var/lib/docker/overlay2/*
+/var/lib/docker/containers/*/
+
+# Large files
+**/node_modules/*
+**/.git/*
+*.iso
+*.img
+
+{% if backup_docker_enabled %}
+# Docker exclusions
+/var/lib/docker/tmp/*
+/var/lib/docker/image/overlay2/repositories.json
+{% endif %}
+
+# Custom exclusions
+{% for exclusion in backup_custom_exclusions | default([]) %}
+{{ exclusion }}
+{% endfor %}

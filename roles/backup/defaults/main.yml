@@ -1,0 +1,47 @@
+---
+# Modern Backup Role - Essential Variables Only
+# Focus on automated data protection with sensible defaults
+
+# Basic backup configuration
+backup_enabled: true
+backup_tool: "restic"  # restic (recommended), rclone, rsync
+backup_user: "backup"
+
+# Cloud storage destination
+backup_destination: ""  # e.g., "s3:bucket-name/path", "gs:bucket/path"
+backup_encryption: true
+backup_compression: true
+
+# Retention policy
+backup_retention_days: 30
+backup_retention_policy: "daily:7 weekly:4 monthly:12"
+
+# System backups
+backup_system_enabled: true
+backup_system_schedule: "0 2 * * *"  # Daily at 2 AM
+backup_system_paths:
+  - "/etc"
+  - "/home" 
+  - "/var/log"
+  - "/opt"
+
+# Container backups (integrates with docker role)
+backup_docker_enabled: true
+backup_docker_schedule: "0 3 * * *"  # Daily at 3 AM
+backup_docker_volumes: true
+backup_docker_configs: true
+backup_docker_compose_dirs: []
+
+# Database backups
+backup_databases: []
+#  - name: "app_database"
+#    type: "postgresql"  # postgresql, mysql, mongodb
+#    host: "localhost"
+#    database: "app_db"
+#    schedule: "0 1 * * *"
+#    retention: "7d"
+
+# Verification and monitoring
+backup_verification: true
+backup_monitoring: true
+backup_alerts_enabled: true

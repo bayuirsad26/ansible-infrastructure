@@ -1,0 +1,145 @@
+---
+# Modern Traefik Role - Container-Native Reverse Proxy
+# Single task file approach for efficiency
+# Uses FQCN throughout for future-proofing
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - traefik_domain != ""
+      - traefik_email != ""
+      - ansible_facts['services']['docker.service'] is defined
+    fail_msg: "Traefik requires domain, email, and Docker service to be running"
+  tags: [traefik, validation]
+
+- name: Create Traefik data directory
+  ansible.builtin.file:
+    path: "{{ traefik_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  tags: [traefik, setup]
+
+- name: Create Traefik Docker network
+  community.docker.docker_network:
+    name: "{{ traefik_network }}"
+    driver: bridge
+    attachable: true
+  tags: [traefik, network]
+
+- name: Generate dashboard user passwords
+  ansible.builtin.set_fact:
+    traefik_dashboard_users_hashed: >-
+      {{
+        traefik_dashboard_users | map('combine', {
+          'password_hash': (item.password | password_hash('bcrypt'))
+        }) | list
+      }}
+  when: 
+    - traefik_dashboard_enabled
+    - traefik_dashboard_auth
+    - traefik_dashboard_users | length > 0
+  tags: [traefik, auth]
+
+- name: Create Traefik static configuration
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: "{{ traefik_data_dir }}/traefik.yml"
+    mode: '0644'
+  notify: restart traefik
+  tags: [traefik, config]
+
+- name: Create Traefik dynamic configuration
+  ansible.builtin.template:
+    src: dynamic.yml.j2
+    dest: "{{ traefik_data_dir }}/dynamic.yml"
+    mode: '0644'
+  notify: restart traefik
+  tags: [traefik, config]
+
+- name: Create Traefik Docker Compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ traefik_data_dir }}/docker-compose.yml"
+    mode: '0644'
+  notify: restart traefik
+  tags: [traefik, compose]
+
+- name: Deploy Traefik container
+  community.docker.docker_compose_v2:
+    project_src: "{{ traefik_data_dir }}"
+    state: present
+    wait: true
+    wait_timeout: 60
+  tags: [traefik, deploy]
+
+- name: Add firewall rules for Traefik
+  when: 
+    - traefik_firewall_integration
+    - firewall_enabled | default(true)
+  tags: [traefik, firewall]
+  block:
+    - name: Open HTTP port in firewall
+      community.general.ufw:
+        rule: allow
+        port: "{{ traefik_web_port }}"
+        proto: tcp
+        comment: "Traefik HTTP"
+      when: ansible_os_family == "Debian"
+
+    - name: Open HTTPS port in firewall
+      community.general.ufw:
+        rule: allow
+        port: "{{ traefik_websecure_port }}"
+        proto: tcp
+        comment: "Traefik HTTPS"
+      when: ansible_os_family == "Debian"
+
+    - name: Open HTTP port in firewalld
+      ansible.posix.firewalld:
+        port: "{{ traefik_web_port }}/tcp"
+        permanent: true
+        immediate: true
+        state: enabled
+        zone: public
+      when: ansible_os_family == "RedHat"
+
+    - name: Open HTTPS port in firewalld
+      ansible.posix.firewalld:
+        port: "{{ traefik_websecure_port }}/tcp"
+        permanent: true
+        immediate: true
+        state: enabled
+        zone: public
+      when: ansible_os_family == "RedHat"
+
+- name: Create Traefik status script
+  ansible.builtin.copy:
+    src: traefik-status.sh
+    dest: /usr/local/bin/traefik-status
+    mode: '0755'
+  tags: [traefik, monitoring]
+
+- name: Wait for Traefik to be ready
+  ansible.builtin.uri:
+    url: "http://localhost:{{ traefik_dashboard_port }}/ping"
+    method: GET
+    status_code: 200
+  register: traefik_health
+  retries: 10
+  delay: 3
+  tags: [traefik, verify]
+
+- name: Display Traefik configuration
+  ansible.builtin.debug:
+    msg:
+      - "Traefik deployed successfully"
+      - "Dashboard: https://{{ traefik_dashboard_subdomain }}.{{ traefik_domain }}"
+      - "Network: {{ traefik_network }}"
+      - "Let's Encrypt: {{ 'Enabled' if traefik_letsencrypt_enabled else 'Disabled' }}"
+      - "Staging Mode: {{ 'Yes' if traefik_letsencrypt_staging else 'No' }}"
+      - "Health Check: {{ 'Healthy' if traefik_health.status == 200 else 'Unhealthy' }}"
+      - "HTTP Port: {{ traefik_web_port }}"
+      - "HTTPS Port: {{ traefik_websecure_port }}"
+  tags: [traefik, info]

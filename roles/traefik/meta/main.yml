@@ -1,0 +1,42 @@
+---
+galaxy_info:
+  role_name: traefik
+  namespace: summitethic
+  author: SummitEthic DevOps Team
+  description: Modern container-native reverse proxy with automatic SSL management
+  company: SummitEthic
+  license: MIT
+  min_ansible_version: "2.15"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal    # 20.04
+        - jammy    # 22.04
+        - noble    # 24.04
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+    - name: Debian
+      versions:
+        - bullseye  # 11
+        - bookworm  # 12
+
+  galaxy_tags:
+    - traefik
+    - reverse-proxy
+    - load-balancer
+    - containers
+    - docker
+    - ssl
+    - letsencrypt
+    - service-discovery
+
+dependencies:
+  - role: docker
+
+collections:
+  - community.docker
+  - community.general
+  - ansible.posix

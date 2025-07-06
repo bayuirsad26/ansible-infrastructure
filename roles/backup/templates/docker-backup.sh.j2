@@ -1,0 +1,68 @@
+#!/bin/bash
+# Docker backup script
+# Managed by Ansible - Do not edit manually
+
+set -euo pipefail
+
+# Configuration
+LOG_FILE="/var/log/backup/docker-backup.log"
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Logging function
+log() {
+    echo "[$TIMESTAMP] $1" | tee -a "$LOG_FILE"
+}
+
+log "Starting Docker backup"
+
+{% if backup_tool == 'restic' %}
+export RESTIC_REPOSITORY="{{ backup_destination }}"
+export RESTIC_PASSWORD_FILE="/etc/backup/credentials"
+
+# Backup Docker volumes
+if {{ backup_docker_volumes | lower }}; then
+    log "Backing up Docker volumes"
+    
+    # Get list of volumes
+    VOLUMES=$(docker volume ls -q)
+    
+    for volume in $VOLUMES; do
+        log "Backing up volume: $volume"
+        
+        # Create temporary container to access volume
+        docker run --rm \
+            -v "$volume":/volume:ro \
+            -v /tmp/backup:/backup \
+            alpine tar czf "/backup/$volume.tar.gz" -C /volume .
+        
+        # Backup the tar file with restic
+        restic backup "/tmp/backup/$volume.tar.gz" \
+            --tag="docker-volume" \
+            --tag="$volume" \
+            --tag="$(hostname)"
+        
+        # Cleanup
+        rm -f "/tmp/backup/$volume.tar.gz"
+    done
+fi
+
+# Backup Docker Compose directories
+{% for compose_dir in backup_docker_compose_dirs %}
+if [[ -d "{{ compose_dir }}" ]]; then
+    log "Backing up Docker Compose directory: {{ compose_dir }}"
+    restic backup "{{ compose_dir }}" \
+        --tag="docker-compose" \
+        --tag="$(hostname)"
+fi
+{% endfor %}
+
+# Cleanup old Docker backups
+log "Applying retention policy for Docker backups"
+restic forget \
+    --tag="docker-volume" \
+    --keep-daily {{ backup_retention_days }} \
+    --prune
+
+{% endif %}
+
+log "Docker backup completed"

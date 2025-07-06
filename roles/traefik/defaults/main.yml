@@ -1,0 +1,42 @@
+---
+# Modern Traefik Role - Essential Variables Only
+# Focus on container-native reverse proxy with sensible defaults
+
+# Basic Traefik configuration
+traefik_enabled: true
+traefik_version: "3.1"
+traefik_domain: ""  # Required: your domain (e.g., "summitethic.com")
+traefik_email: ""   # Required: email for Let's Encrypt
+
+# Network configuration
+traefik_network: "traefik"
+traefik_web_port: 80
+traefik_websecure_port: 443
+traefik_dashboard_port: 8080
+
+# Dashboard configuration
+traefik_dashboard_enabled: true
+traefik_dashboard_subdomain: "traefik"
+traefik_dashboard_auth: true
+traefik_dashboard_users: []
+#  - username: "admin"
+#    password: "secure_password"  # Will be hashed automatically
+
+# Let's Encrypt configuration
+traefik_letsencrypt_enabled: true
+traefik_letsencrypt_staging: false  # Set to true for testing
+traefik_letsencrypt_resolver: "letsencrypt"
+
+# Security configuration
+traefik_security_headers: true
+traefik_rate_limiting: true
+traefik_default_rate_limit: "100/s"
+
+# Container configuration
+traefik_container_name: "traefik"
+traefik_data_dir: "/var/lib/traefik"
+traefik_log_level: "INFO"  # DEBUG, INFO, WARN, ERROR
+
+# Integration with existing roles
+traefik_monitoring_integration: true
+traefik_firewall_integration: true

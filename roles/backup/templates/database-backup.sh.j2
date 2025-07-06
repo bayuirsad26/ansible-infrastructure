@@ -1,0 +1,64 @@
+#!/bin/bash
+# Database backup script for {{ item.name }}
+# Managed by Ansible - Do not edit manually
+
+set -euo pipefail
+
+# Configuration
+DB_NAME="{{ item.database }}"
+DB_TYPE="{{ item.type }}"
+DB_HOST="{{ item.host | default('localhost') }}"
+DB_USER="{{ item.user | default('backup') }}"
+BACKUP_FILE="/tmp/{{ item.name }}_$(date +%Y%m%d_%H%M%S).sql"
+LOG_FILE="/var/log/backup/{{ item.name }}-backup.log"
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Logging function
+log() {
+    echo "[$TIMESTAMP] $1" | tee -a "$LOG_FILE"
+}
+
+log "Starting {{ item.name }} database backup"
+
+{% if item.type == 'postgresql' %}
+# PostgreSQL backup
+log "Creating PostgreSQL dump"
+pg_dump -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" > "$BACKUP_FILE"
+
+{% elif item.type == 'mysql' %}
+# MySQL backup
+log "Creating MySQL dump"
+mysqldump -h "$DB_HOST" -u "$DB_USER" -p"$MYSQL_PASSWORD" "$DB_NAME" > "$BACKUP_FILE"
+
+{% elif item.type == 'mongodb' %}
+# MongoDB backup
+log "Creating MongoDB dump"
+mongodump --host "$DB_HOST" --db "$DB_NAME" --out /tmp/mongodb_backup
+tar czf "$BACKUP_FILE" -C /tmp/mongodb_backup .
+rm -rf /tmp/mongodb_backup
+
+{% endif %}
+
+{% if backup_tool == 'restic' %}
+# Upload to backup repository
+log "Uploading database backup to repository"
+export RESTIC_REPOSITORY="{{ backup_destination }}"
+export RESTIC_PASSWORD_FILE="/etc/backup/credentials"
+
+restic backup "$BACKUP_FILE" \
+    --tag="database" \
+    --tag="{{ item.name }}" \
+    --tag="$(hostname)"
+
+# Cleanup old database backups
+restic forget \
+    --tag="{{ item.name }}" \
+    --keep-daily {{ item.retention | default('7') | regex_replace('d', '') | int }} \
+    --prune
+
+{% endif %}
+
+# Cleanup local backup file
+rm -f "$BACKUP_FILE"
+
+log "{{ item.name }} database backup completed"

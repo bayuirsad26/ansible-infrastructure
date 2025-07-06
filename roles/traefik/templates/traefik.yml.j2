@@ -1,0 +1,77 @@
+# Traefik static configuration
+# Managed by Ansible - Do not edit manually
+
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: {{ traefik_log_level }}
+  format: json
+
+accessLog:
+  format: json
+  fields:
+    headers:
+      defaultMode: keep
+
+api:
+{% if traefik_dashboard_enabled %}
+  dashboard: true
+  debug: false
+{% else %}
+  dashboard: false
+{% endif %}
+
+entryPoints:
+  web:
+    address: ":{{ traefik_web_port }}"
+{% if traefik_letsencrypt_enabled %}
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+{% endif %}
+
+  websecure:
+    address: ":{{ traefik_websecure_port }}"
+    http:
+      tls:
+        options: default
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: {{ traefik_network }}
+    watch: true
+
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+{% if traefik_letsencrypt_enabled %}
+certificatesResolvers:
+  {{ traefik_letsencrypt_resolver }}:
+    acme:
+      email: {{ traefik_email }}
+      storage: /letsencrypt/acme.json
+{% if traefik_letsencrypt_staging %}
+      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+{% endif %}
+      httpChallenge:
+        entryPoint: web
+{% endif %}
+
+{% if traefik_monitoring_integration %}
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addServicesLabels: true
+    addRoutersLabels: true
+
+ping:
+  entryPoint: traefik
+{% endif %}

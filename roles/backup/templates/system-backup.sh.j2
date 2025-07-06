@@ -1,0 +1,97 @@
+#!/bin/bash
+# System backup script using {{ backup_tool }}
+# Managed by Ansible - Do not edit manually
+
+set -euo pipefail
+
+# Configuration
+BACKUP_USER="{{ backup_user }}"
+BACKUP_TOOL="{{ backup_tool }}"
+BACKUP_DESTINATION="{{ backup_destination }}"
+RETENTION_DAYS="{{ backup_retention_days }}"
+LOG_FILE="/var/log/backup/system-backup.log"
+TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+
+# Logging function
+log() {
+    echo "[$TIMESTAMP] $1" | tee -a "$LOG_FILE"
+}
+
+log_error() {
+    echo "[$TIMESTAMP] ERROR: $1" | tee -a "$LOG_FILE" >&2
+}
+
+# Create log directory
+mkdir -p "$(dirname "$LOG_FILE")"
+
+log "Starting system backup"
+
+{% if backup_tool == 'restic' %}
+# Restic configuration
+export RESTIC_REPOSITORY="{{ backup_destination }}"
+export RESTIC_PASSWORD_FILE="/etc/backup/credentials"
+
+# Check if dry run
+if [[ "${1:-}" == "--dry-run" ]]; then
+    log "Performing dry run - no actual backup will be created"
+    DRY_RUN="--dry-run"
+else
+    DRY_RUN=""
+fi
+
+# Perform backup
+log "Creating backup snapshot"
+restic backup ${DRY_RUN} \
+    --exclude-file="/etc/backup/exclude.txt" \
+    --tag="system" \
+    --tag="$(hostname)" \
+{% for path in backup_system_paths %}
+    "{{ path }}" \
+{% endfor %}
+    2>&1 | tee -a "$LOG_FILE"
+
+if [[ -z "$DRY_RUN" ]]; then
+    # Cleanup old backups
+    log "Applying retention policy: {{ backup_retention_policy }}"
+    restic forget \
+        --tag="system" \
+        --keep-daily {{ backup_retention_days }} \
+        --prune \
+        2>&1 | tee -a "$LOG_FILE"
+    
+    # Check repository integrity
+    log "Checking repository integrity"
+    restic check --read-data-subset=5% 2>&1 | tee -a "$LOG_FILE"
+fi
+
+{% elif backup_tool == 'rclone' %}
+# Rclone configuration
+RCLONE_CONFIG="/etc/backup/rclone.conf"
+
+# Perform backup
+log "Syncing files to cloud storage"
+for path in {{ backup_system_paths | join(' ') }}; do
+    if [[ -d "$path" ]]; then
+        log "Backing up $path"
+        rclone sync "$path" "{{ backup_destination }}/$(hostname)$path" \
+            --config="$RCLONE_CONFIG" \
+            --exclude-from="/etc/backup/exclude.txt" \
+            --progress \
+            2>&1 | tee -a "$LOG_FILE"
+    fi
+done
+
+{% endif %}
+
+# Backup completion
+BACKUP_SIZE=$(du -sh {{ backup_system_paths | join(' ') }} 2>/dev/null | awk '{s+=$1} END {print s}' || echo "Unknown")
+log "System backup completed successfully"
+log "Backup size: $BACKUP_SIZE"
+
+# Send monitoring data (if monitoring enabled)
+{% if backup_monitoring %}
+echo "system_backup_success $(date +%s)" >> /var/log/backup/metrics.log
+echo "system_backup_size_bytes $(du -sb {{ backup_system_paths | join(' ') }} 2>/dev/null | awk '{s+=$1} END {print s}' || echo 0)" >> /var/log/backup/metrics.log
+{% endif %}
+
+log "System backup script completed"
