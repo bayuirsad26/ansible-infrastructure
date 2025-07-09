@@ -1,7 +1,6 @@
 ---
-# Modern Logging Role - Centralized Log Management
-# Single task file approach for efficiency
-# Uses FQCN throughout for future-proofing
+# Optimized Logging Role - Simple & Effective
+# Focus on rsyslog + forwarding for centralized platforms
 
 - name: Install system logging packages
   ansible.builtin.package:
@@ -9,197 +8,81 @@
     state: present
   tags: [logging, packages]
 
-- name: Configure rsyslog
+- name: Configure rsyslog daemon
+  ansible.builtin.template:
+    src: rsyslog.conf.j2
+    dest: /etc/rsyslog.conf
+    mode: '0644'
+    backup: true
+  notify: Restart rsyslog
   when: logging_enable_rsyslog
   tags: [logging, rsyslog]
-  block:
-    - name: Configure rsyslog daemon
-      ansible.builtin.template:
-        src: rsyslog.conf.j2
-        dest: /etc/rsyslog.conf
-        mode: '0644'
-        backup: true
-      notify: Restart rsyslog
 
-    - name: Create custom rsyslog configuration
-      ansible.builtin.template:
-        src: 50-default.conf.j2
-        dest: /etc/rsyslog.d/50-default.conf
-        mode: '0644'
-      notify: Restart rsyslog
+- name: Configure rsyslog forwarding
+  ansible.builtin.template:
+    src: 50-forwarding.conf.j2
+    dest: /etc/rsyslog.d/50-forwarding.conf
+    mode: '0644'
+  notify: Restart rsyslog
+  when:
+    - logging_enable_forwarding
+    - logging_destination != ""
+  tags: [logging, forwarding]
 
-    - name: Enable and start rsyslog service
-      ansible.builtin.systemd_service:
-        name: rsyslog
-        enabled: true
-        state: started
-
-- name: Configure journald
+- name: Configure journald for optimal performance
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: "^#?{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    state: present
+  loop:
+    - { key: 'Storage', value: 'persistent' }
+    - { key: 'SystemMaxUse', value: '500M' }
+    - { key: 'SystemMaxFileSize', value: '{{ logging_max_log_size }}' }
+    - { key: 'MaxRetentionSec', value: '{{ logging_retention_days * 24 * 3600 }}' }
+    - { key: 'ForwardToSyslog', value: '{{ "yes" if logging_enable_rsyslog else "no" }}' }
+  notify: Restart journald
   when: logging_enable_journald
   tags: [logging, journald]
-  block:
-    - name: Configure systemd-journald
-      ansible.builtin.lineinfile:
-        path: /etc/systemd/journald.conf
-        regexp: "^#?{{ item.key }}="
-        line: "{{ item.key }}={{ item.value }}"
-        state: present
-      loop:
-        - { key: 'Storage', value: 'persistent' }
-        - { key: 'SystemMaxUse', value: '1G' }
-        - { key: 'SystemMaxFileSize', value: '{{ logging_max_log_size }}' }
-        - { key: 'MaxRetentionSec', value: '{{ logging_retention_days * 24 * 3600 }}' }
-        - { key: 'ForwardToSyslog', value: '{{ "yes" if logging_enable_rsyslog else "no" }}' }
-      notify: Restart journald
-
-- name: Install and configure modern log shipper
-  when:
-    - logging_enable_forwarding
-    - logging_shipper in ['vector', 'fluent-bit']
-  tags: [logging, shipper]
-  block:
-    - name: Create logging user
-      ansible.builtin.user:
-        name: "{{ logging_shipper }}"
-        system: true
-        shell: /bin/false
-        home: "/var/lib/{{ logging_shipper }}"
-        create_home: true
-
-    - name: Create logging directories
-      ansible.builtin.file:
-        path: "{{ item }}"
-        state: directory
-        owner: "{{ logging_shipper }}"
-        group: "{{ logging_shipper }}"
-        mode: '0755'
-      loop:
-        - "/var/lib/{{ logging_shipper }}"
-        - "/etc/{{ logging_shipper }}"
-        - "/var/log/{{ logging_shipper }}"
-
-- name: Install Vector log shipper
-  when:
-    - logging_enable_forwarding
-    - logging_shipper == 'vector'
-  tags: [logging, vector]
-  block:
-    - name: Download Vector
-      ansible.builtin.get_url:
-        url: >-
-          https://github.com/vectordotdev/vector/releases/download/v{{ logging_shipper_version }}/
-          vector-{{ logging_shipper_version }}-{{ ansible_architecture }}-unknown-linux-musl.tar.gz
-        dest: "/tmp/vector-{{ logging_shipper_version }}.tar.gz"
-        mode: '0644'
-        timeout: 30
-
-    - name: Extract Vector
-      ansible.builtin.unarchive:
-        src: "/tmp/vector-{{ logging_shipper_version }}.tar.gz"
-        dest: /tmp
-        remote_src: true
-
-    - name: Install Vector binary
-      ansible.builtin.copy:
-        src: "/tmp/vector-{{ ansible_architecture }}-unknown-linux-musl/bin/vector"
-        dest: /usr/local/bin/vector
-        remote_src: true
-        owner: root
-        group: root
-        mode: '0755'
-      notify: Restart vector
-
-    - name: Configure Vector
-      ansible.builtin.template:
-        src: vector.toml.j2
-        dest: /etc/vector/vector.toml
-        owner: vector
-        group: vector
-        mode: '0644'
-      notify: Restart vector
-
-    - name: Create Vector systemd service
-      ansible.builtin.template:
-        src: vector.service.j2
-        dest: /etc/systemd/system/vector.service
-        mode: '0644'
-      notify:
-        - Reload systemd
-        - Restart vector
-
-- name: Install Fluent Bit log shipper
-  when:
-    - logging_enable_forwarding
-    - logging_shipper == 'fluent-bit'
-  tags: [logging, fluent-bit]
-  block:
-    - name: Add Fluent Bit repository key
-      ansible.builtin.get_url:
-        url: https://packages.fluentbit.io/fluentbit.key
-        dest: /etc/apt/keyrings/fluentbit.asc
-        mode: '0644'
-      when: ansible_os_family == "Debian"
-
-    - name: Add Fluent Bit repository
-      ansible.builtin.apt_repository:
-        repo: >-
-          deb [signed-by=/etc/apt/keyrings/fluentbit.asc]
-          https://packages.fluentbit.io/ubuntu/{{ ansible_distribution_release }}
-          {{ ansible_distribution_release }} main
-        filename: fluent-bit
-      when: ansible_os_family == "Debian"
-
-    - name: Install Fluent Bit
-      ansible.builtin.package:
-        name: td-agent-bit
-        state: present
-        update_cache: true
-
-    - name: Configure Fluent Bit
-      ansible.builtin.template:
-        src: fluent-bit.conf.j2
-        dest: /etc/td-agent-bit/td-agent-bit.conf
-        mode: '0644'
-      notify: Restart td-agent-bit
 
 - name: Configure log rotation
+  ansible.builtin.template:
+    src: logrotate.conf.j2
+    dest: /etc/logrotate.d/system-logs
+    mode: '0644'
   tags: [logging, rotation]
-  block:
-    - name: Configure system log rotation
-      ansible.builtin.template:
-        src: logrotate.conf.j2
-        dest: /etc/logrotate.d/system-logs
-        mode: '0644'
 
-    - name: Configure custom log rotation
-      ansible.builtin.template:
-        src: custom-logrotate.conf.j2
-        dest: "/etc/logrotate.d/{{ logging_shipper }}"
-        mode: '0644'
-      when: logging_shipper in ['vector', 'fluent-bit']
-
-- name: Configure container logging
+- name: Configure Docker logging driver
+  ansible.builtin.lineinfile:
+    path: /etc/docker/daemon.json
+    regexp: '"log-driver":'
+    line: '  "log-driver": "json-file",'
+    insertafter: '{'
+  notify: Restart Docker
   when:
-    - logging_container_aware
+    - logging_docker_logs
     - ansible_facts['services']['docker.service'] is defined
   tags: [logging, docker]
-  block:
-    - name: Add logging user to docker group
-      ansible.builtin.user:
-        name: "{{ logging_shipper }}"
-        groups: docker
-        append: true
-      when: logging_shipper in ['vector', 'fluent-bit']
-      notify: "Restart {{ logging_shipper }}"
 
-    - name: Configure Docker daemon logging
-      ansible.builtin.lineinfile:
-        path: /etc/docker/daemon.json
-        regexp: '"log-driver":'
-        line: '  "log-driver": "json-file",'
-        insertafter: '{'
-      notify: Restart Docker
-      when: logging_docker_logs
+- name: Configure Docker log rotation
+  ansible.builtin.lineinfile:
+    path: /etc/docker/daemon.json
+    regexp: '"log-opts":'
+    line: '  "log-opts": { "max-size": "10m", "max-file": "3" },'
+    insertafter: '"log-driver":'
+  notify: Restart Docker
+  when:
+    - logging_docker_logs
+    - ansible_facts['services']['docker.service'] is defined
+  tags: [logging, docker]
+
+- name: Enable and start rsyslog service
+  ansible.builtin.systemd_service:
+    name: rsyslog
+    enabled: true
+    state: started
+  when: logging_enable_rsyslog
+  tags: [logging, service]
 
 - name: Setup log cleanup automation
   when: logging_enable_cleanup
@@ -219,60 +102,14 @@
         job: "/usr/local/bin/log-cleanup {{ logging_retention_days }}"
         user: root
 
-- name: Enable log shippers
-  when: logging_enable_forwarding
-  tags: [logging, service]
-  block:
-    - name: Enable and start Vector service
-      ansible.builtin.systemd_service:
-        name: vector
-        enabled: true
-        state: started
-        daemon_reload: true
-      when: logging_shipper == 'vector'
-
-    - name: Enable and start Fluent Bit service
-      ansible.builtin.systemd_service:
-        name: td-agent-bit
-        enabled: true
-        state: started
-      when: logging_shipper == 'fluent-bit'
-
-- name: Cleanup downloaded files
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: absent
-  loop:
-    - "/tmp/vector-{{ logging_shipper_version }}.tar.gz"
-    - "/tmp/vector-{{ ansible_architecture }}-unknown-linux-musl"
-  when: logging_shipper == 'vector'
-  tags: [logging, cleanup]
-
-- name: Verify logging configuration
-  tags: [logging, verify]
-  block:
-    - name: Check rsyslog service
-      ansible.builtin.systemd_service:
-        name: rsyslog
-      register: rsyslog_status
-      when: logging_enable_rsyslog
-
-    - name: Check log shipper service
-      ansible.builtin.systemd_service:
-        name: "{{ logging_shipper_service_map[logging_shipper] }}"
-      register: shipper_status
-      when:
-        - logging_enable_forwarding
-        - logging_shipper in ['vector', 'fluent-bit']
-
-    - name: Display logging configuration
-      ansible.builtin.debug:
-        msg:
-          - "Logging configuration applied successfully"
-          - "System logging: {{ 'Enabled' if logging_enable_rsyslog else 'Disabled' }}"
-          - "Log forwarding: {{ 'Enabled' if logging_enable_forwarding else 'Disabled' }}"
-          - "Log shipper: {{ logging_shipper if logging_enable_forwarding else 'None' }}"
-          - "Log format: {{ logging_format }}"
-          - "Container logs: {{ 'Enabled' if logging_container_aware else 'Disabled' }}"
-          - "Log retention: {{ logging_retention_days }} days"
-          - "Destination: {{ logging_destination if logging_destination else 'Local only' }}"
+- name: Display logging configuration
+  ansible.builtin.debug:
+    msg:
+      - "Logging configuration applied successfully"
+      - "System logging: rsyslog + journald"
+      - "Log forwarding: {{ 'Enabled' if logging_enable_forwarding else 'Disabled' }}"
+      - "Destination: {{ logging_destination if logging_destination else 'Local only' }}"
+      - "Container logs: {{ 'Enabled' if logging_docker_logs else 'Disabled' }}"
+      - "Log retention: {{ logging_retention_days }} days"
+      - "Log rotation: {{ logging_rotation_frequency }}"
+  tags: [logging, info]

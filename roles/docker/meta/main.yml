@@ -3,7 +3,7 @@ galaxy_info:
   role_name: docker
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Modern Docker installation with security hardening for 2025
+  description: Modern Docker installation with security hardening
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -28,7 +28,7 @@ galaxy_info:
     - containerization
     - security
     - devops
-    - "2025"
+    - container-platform
 
 dependencies: []
 

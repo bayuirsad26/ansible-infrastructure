@@ -1,0 +1,14 @@
+# Rsyslog forwarding configuration for centralized logging
+# Perfect for Loki, Elasticsearch, or other centralized platforms
+# Managed by Ansible - Do not edit manually
+
+{% if logging_protocol == 'tcp' %}
+# TCP forwarding (reliable) - recommended for production
+*.*                             @@{{ logging_destination }}
+{% else %}
+# UDP forwarding (faster, less reliable)
+*.*                             @{{ logging_destination }}
+{% endif %}
+
+# Continue local logging (ensures local availability)
+# This allows both local access and centralized collection

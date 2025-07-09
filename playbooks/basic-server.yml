@@ -1,0 +1,27 @@
+---
+- name: Basic Server Setup
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    security_level: "basic"
+    monitoring_enabled: true
+    logging_centralized: false
+    firewall_enabled: true
+    backup_enabled: false
+    docker_enabled: false
+    traefik_enabled: false
+
+  roles:
+    - role: common
+      common_admin_users: "{{ admin_users }}"
+      common_timezone: "{{ timezone }}"
+      common_ssh_port: "{{ ssh_port }}"
+
+    - role: monitoring
+      monitoring_node_exporter_enabled: true
+      monitoring_bind_address: "127.0.0.1"
+
+    - role: firewall
+      firewall_ssh_sources: "{{ ssh_allowed_sources }}"

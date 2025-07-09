@@ -1,5 +1,5 @@
 #!/bin/bash
-# Firewall status check script
+# Firewall status monitoring script
 # Managed by Ansible - Do not edit manually
 
 set -euo pipefail
@@ -10,7 +10,6 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-# Logging
 log() {
     echo -e "${GREEN}$1${NC}"
 }
@@ -45,15 +44,15 @@ case $FIREWALL_TYPE in
             log "✓ Active rules: $RULES_COUNT"
             
             # Check for SSH access
-            if ufw status | grep -q "22/tcp"; then
+            if ufw status | grep -q "22/tcp\|OpenSSH"; then
                 log "✓ SSH access is configured"
             else
                 log_warn "SSH access rule not found"
             fi
             
-            # Show brief status
+            # Show status
             echo "--- UFW Status ---"
-            ufw status --numbered | head -10
+            ufw status --numbered
             
         else
             log_error "UFW firewall is not active"
@@ -69,15 +68,7 @@ case $FIREWALL_TYPE in
             DEFAULT_ZONE=$(firewall-cmd --get-default-zone)
             log "✓ Default zone: $DEFAULT_ZONE"
             
-            # Check services
-            SERVICES=$(firewall-cmd --list-services | wc -w)
-            log "✓ Allowed services: $SERVICES"
-            
-            # Check ports
-            PORTS=$(firewall-cmd --list-ports | wc -w)
-            log "✓ Open ports: $PORTS"
-            
-            # Show brief status
+            # Show status
             echo "--- firewalld Status ---"
             firewall-cmd --list-all
             
@@ -87,25 +78,5 @@ case $FIREWALL_TYPE in
         fi
         ;;
 esac
-
-# Check for Docker integration
-if command -v docker &> /dev/null && docker info &> /dev/null; then
-    case $FIREWALL_TYPE in
-        "ufw")
-            if ufw status | grep -q "docker0"; then
-                log "✓ Docker integration configured"
-            else
-                log_warn "Docker integration not found in UFW rules"
-            fi
-            ;;
-        "firewalld")
-            if firewall-cmd --list-interfaces | grep -q "docker0"; then
-                log "✓ Docker integration configured"
-            else
-                log_warn "Docker integration not found in firewalld"
-            fi
-            ;;
-    esac
-fi
 
 log "Firewall status check completed"

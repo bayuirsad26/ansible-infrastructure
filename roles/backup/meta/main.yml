@@ -3,7 +3,7 @@ galaxy_info:
   role_name: backup
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Modern automated backup solution with cloud-native storage
+  description: Simplified backup solution for basic server needs
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -25,10 +25,8 @@ galaxy_info:
 
   galaxy_tags:
     - backup
-    - disaster
-    - recovery
-    - cloudstorage
-    - restic
+    - disaster-recovery
+    - rsync
     - automation
 
 dependencies: []

@@ -35,7 +35,7 @@ http:
       rateLimit:
         burst: 100
         period: 1s
-        average: {{ traefik_default_rate_limit.split('/')[0] }}
+        average: {{ traefik_default_rate_limit }}
 {% endif %}
 
 {% if traefik_dashboard_enabled and traefik_dashboard_auth and traefik_dashboard_users_hashed | default([]) | length > 0 %}
@@ -47,24 +47,7 @@ http:
 {% endfor %}
 {% endif %}
 
-  routers:
-{% if traefik_dashboard_enabled %}
-    dashboard:
-      rule: "Host(`{{ traefik_dashboard_subdomain }}.{{ traefik_domain }}`)"
-      service: api@internal
-{% if traefik_letsencrypt_enabled %}
-      tls:
-        certResolver: {{ traefik_letsencrypt_resolver }}
-{% endif %}
-{% if traefik_dashboard_auth and traefik_dashboard_users_hashed | default([]) | length > 0 %}
-      middlewares:
-        - dashboard-auth
-{% if traefik_security_headers %}
-        - security-headers
-{% endif %}
-{% endif %}
-{% endif %}
-
+  routers: {}
   services: {}
 
 tls:

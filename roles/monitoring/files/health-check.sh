@@ -17,7 +17,7 @@ log() {
 log "Starting monitoring health check"
 
 # Check Node Exporter service
-if systemctl is-active --quiet node-exporter; then
+if systemctl is-active --quiet node-exporter || systemctl is-active --quiet prometheus-node-exporter; then
     log "✓ Node Exporter service is running"
 else
     log "✗ Node Exporter service is not running"

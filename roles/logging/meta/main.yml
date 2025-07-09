@@ -3,7 +3,7 @@ galaxy_info:
   role_name: logging
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Modern centralized log management and forwarding for 2025
+  description: Simplified log management for centralized platforms
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -26,10 +26,9 @@ galaxy_info:
   galaxy_tags:
     - logging
     - centralized
-    - vector
-    - fluentbit
     - rsyslog
     - logrotate
+    - loki
 
 dependencies: []
 

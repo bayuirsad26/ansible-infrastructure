@@ -3,3 +3,8 @@
   ansible.builtin.systemd_service:
     name: "{{ common_ssh_service }}"
     state: restarted
+
+- name: Restart fail2ban
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    state: restarted

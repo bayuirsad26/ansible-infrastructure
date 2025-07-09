@@ -1,7 +1,14 @@
-# Log rotation configuration
+# System log rotation configuration
 # Managed by Ansible - Do not edit manually
 
-/var/log/syslog {
+/var/log/syslog
+/var/log/auth.log
+/var/log/kern.log
+/var/log/mail.log
+/var/log/daemon.log
+/var/log/user.log
+/var/log/cron.log
+{
     {{ logging_rotation_frequency }}
     rotate {{ logging_retention_days if logging_rotation_frequency == 'daily' else (logging_retention_days // 7) }}
     missingok
@@ -10,51 +17,8 @@
     delaycompress
     sharedscripts
     maxsize {{ logging_max_log_size }}
+    create 640 root adm
     postrotate
         systemctl reload rsyslog
     endscript
 }
-
-/var/log/auth.log {
-    {{ logging_rotation_frequency }}
-    rotate {{ logging_retention_days if logging_rotation_frequency == 'daily' else (logging_retention_days // 7) }}
-    missingok
-    notifempty
-    compress
-    delaycompress
-    sharedscripts
-    maxsize {{ logging_max_log_size }}
-    postrotate
-        systemctl reload rsyslog
-    endscript
-}
-
-/var/log/kern.log {
-    weekly
-    rotate {{ logging_retention_days // 7 }}
-    missingok
-    notifempty
-    compress
-    delaycompress
-    sharedscripts
-    maxsize {{ logging_max_log_size }}
-    postrotate
-        systemctl reload rsyslog
-    endscript
-}
-
-{% if logging_shipper in ['vector', 'fluent-bit'] %}
-/var/log/{{ logging_shipper }}/*.log {
-    {{ logging_rotation_frequency }}
-    rotate {{ logging_retention_days if logging_rotation_frequency == 'daily' else (logging_retention_days // 7) }}
-    missingok
-    notifempty
-    compress
-    delaycompress
-    sharedscripts
-    maxsize {{ logging_max_log_size }}
-    postrotate
-        systemctl reload {{ logging_shipper_service_map[logging_shipper] }}
-    endscript
-}
-{% endif %}

@@ -1,24 +1,28 @@
-# Docker Role - Modern & Efficient
+# Docker Role - Container Platform
 
-Installs Docker CE with security hardening for 2025 standards.
+Modern Docker installation with security hardening and production-ready configuration.
 
 ## What This Role Does
 
 - ✅ Installs Docker CE with compose & buildx plugins
 - ✅ Applies security hardening by default
+- ✅ Configures production-ready daemon settings
 - ✅ Manages users and permissions
-- ✅ Configures daemon for production use
+- ✅ Sets up user namespace remapping
+- ✅ Configures secure logging and storage
 
 ## What This Role Doesn't Do
 
-- ❌ Monitoring (use dedicated monitoring role)
-- ❌ Complex orchestration (use Kubernetes role)
-- ❌ Application deployment (use playbooks)
+- ❌ Application deployment (use Docker Compose)
+- ❌ Container orchestration (use Kubernetes)
+- ❌ Monitoring setup (use monitoring role)
+- ❌ Firewall configuration (use firewall role)
 
 ## Requirements
 
 - Ansible >= 2.15
-- community.docker collection: `ansible-galaxy collection install community.docker`
+- community.docker collection
+- Internet access for Docker repository
 
 ## Quick Start
 
@@ -27,7 +31,8 @@ Installs Docker CE with security hardening for 2025 standards.
   become: true
   roles:
     - role: docker
-      docker_users: [deploy, developer]
+      docker_users: ["deploy", "developer"]
+      docker_security_enabled: true
 ```
 
 ## Variables
@@ -36,67 +41,34 @@ Installs Docker CE with security hardening for 2025 standards.
 
 ```yaml
 # Users to add to docker group
-docker_users: []
+docker_users: ["deploy", "developer"]
 
-# Security hardening (enabled by default)
+# Security hardening (recommended)
 docker_security_enabled: true
-
-# Custom daemon config (optional override)
-docker_daemon_config: {}
 
 # Service management
 docker_service_state: started
 docker_service_enabled: true
 ```
 
-### Example with Custom Config
+## Security Features
+
+- **User Namespace Remapping**: Isolates container processes
+- **Secure Daemon Configuration**: Production-ready settings
+- **Log Rotation**: Prevents disk space issues
+- **Security Hardening**: Default security measures
+
+## Integration
+
+Perfect integration with other roles:
 
 ```yaml
-- role: docker
-  docker_users: [deploy, developer]
-  docker_daemon_config:
-    experimental: true
-    metrics-addr: "127.0.0.1:9323"
-    default-address-pools:
-      - base: "172.18.0.0/16"
-        size: 24
-```
-
-## Security Features (Enabled by Default)
-
-- User namespace remapping (dockremap)
-- Secure socket permissions
-- No new privileges flag
-- Production logging limits
-
-## Example Playbooks
-
-### Infrastructure Setup
-
-```yaml
----
-- name: Setup Docker infrastructure
-  hosts: docker_hosts
-  become: true
-  roles:
-    - role: common
-    - role: docker
-      docker_users: [deploy, developer]
-```
-
-### Application Deployment
-
-```yaml
----
-- name: Deploy applications
-  hosts: docker_hosts
-  become: true
-  tasks:
-    - name: Deploy web application
-      community.docker.docker_compose_v2:
-        project_src: /opt/apps/webapp
-        state: present
-      become_user: deploy
+roles:
+  - role: common      # Base system
+  - role: docker      # Container platform (this role)
+  - role: traefik     # Reverse proxy
+  - role: monitoring  # Container monitoring
+  - role: firewall    # Network security
 ```
 
 ## License

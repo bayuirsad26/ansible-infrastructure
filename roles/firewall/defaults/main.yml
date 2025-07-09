@@ -1,43 +1,54 @@
 ---
-# Modern Firewall Role - Essential Variables Only
-# Focus on network security with sensible, secure defaults
+# Optimized Firewall Role - Auto-Integrated
+# Automatically discovers and configures services from other roles
 
-# Basic firewall configuration
 firewall_enabled: true
-firewall_default_policy: "deny"  # Security-first: deny all, allow specific
+firewall_default_policy: "deny"
 
-# Infrastructure service ports (automatically integrated)
-firewall_infrastructure_ports:
-  - port: "{{ common_ssh_port | default(22) }}"
+# Auto-discovered service ports (integrated with other roles)
+firewall_service_ports:
+  ssh:
+    port: "{{ common_ssh_port | default(22) }}"
     proto: "tcp"
+    source: "{{ firewall_ssh_sources | default('0.0.0.0/0') }}"
+    enabled: true
     comment: "SSH access"
-  - port: "{{ monitoring_node_exporter_port | default(9100) }}"
+
+  node_exporter:
+    port: "{{ monitoring_node_exporter_port | default(9100) }}"
     proto: "tcp"
-    comment: "Node Exporter"
     source: "{{ firewall_monitoring_sources | default('127.0.0.1') }}"
+    enabled: "{{ monitoring_node_exporter_enabled | default(false) }}"
+    comment: "Node Exporter metrics"
 
-# Custom firewall rules
-firewall_allow_ports: []
-#  - { port: 80, proto: "tcp", comment: "HTTP" }
-#  - { port: 443, proto: "tcp", comment: "HTTPS" }
-#  - { port: "8000:8100", proto: "tcp", comment: "Application range" }
+  traefik_http:
+    port: "{{ traefik_web_port | default(80) }}"
+    proto: "tcp"
+    source: "0.0.0.0/0"
+    enabled: "{{ traefik_enabled | default(false) }}"
+    comment: "Traefik HTTP"
 
-firewall_allow_sources: []
-#  - { source: "10.0.0.0/8", comment: "Private network access" }
-#  - { source: "192.168.1.100", port: 22, comment: "Admin SSH access" }
+  traefik_https:
+    port: "{{ traefik_websecure_port | default(443) }}"
+    proto: "tcp"
+    source: "0.0.0.0/0"
+    enabled: "{{ traefik_enabled | default(false) }}"
+    comment: "Traefik HTTPS"
+
+# Custom rules (user-defined)
+firewall_custom_rules: []
+#  - { port: 8080, proto: "tcp", source: "10.0.0.0/8", comment: "Custom app" }
+
+# Source restrictions
+firewall_ssh_sources: "0.0.0.0/0"
+firewall_monitoring_sources: "127.0.0.1"
 
 # Container integration
 firewall_docker_integration: true
 firewall_docker_bridge: "docker0"
 
-# Monitoring and logging sources
-firewall_monitoring_sources: "127.0.0.1"
-firewall_management_sources: "0.0.0.0/0"
-
-# Rate limiting (basic DDoS protection)
+# Rate limiting and security
 firewall_enable_rate_limiting: true
 firewall_rate_limit: "6/min"
-
-# Logging
 firewall_enable_logging: true
 firewall_log_level: "low"

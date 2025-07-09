@@ -4,61 +4,71 @@ security_packages:
   - auditd
   - aide
   - rkhunter
-  - chkrootkit
-  - lynis
 
-# Kernel security parameters by compliance level
+# CONSOLIDATED: All kernel security parameters from common role
 security_kernel_params:
   basic:
-    kernel.dmesg_restrict: 1
-    kernel.kptr_restrict: 2
+    # Network security
+    net.ipv4.ip_forward: 0
+    net.ipv4.conf.all.send_redirects: 0
+    net.ipv4.conf.all.accept_redirects: 0
+    net.ipv4.conf.all.secure_redirects: 0
+    net.ipv4.icmp_echo_ignore_broadcasts: 1
     net.ipv4.conf.all.log_martians: 1
     net.ipv4.conf.default.log_martians: 1
+    # Kernel security
+    kernel.dmesg_restrict: 1
+    kernel.kptr_restrict: 1
 
   moderate:
-    kernel.dmesg_restrict: 1
-    kernel.kptr_restrict: 2
-    kernel.yama.ptrace_scope: 2
-    net.ipv4.conf.all.log_martians: 1
-    net.ipv4.conf.default.log_martians: 1
+    # Network security (enhanced)
+    net.ipv4.ip_forward: 0
     net.ipv4.conf.all.send_redirects: 0
-    net.ipv4.conf.default.send_redirects: 0
     net.ipv4.conf.all.accept_redirects: 0
+    net.ipv4.conf.all.secure_redirects: 0
+    net.ipv4.conf.default.send_redirects: 0
     net.ipv4.conf.default.accept_redirects: 0
+    net.ipv4.conf.default.secure_redirects: 0
     net.ipv6.conf.all.accept_redirects: 0
     net.ipv6.conf.default.accept_redirects: 0
+    net.ipv4.icmp_echo_ignore_broadcasts: 1
+    net.ipv4.conf.all.log_martians: 1
+    net.ipv4.conf.default.log_martians: 1
+    # Kernel security (enhanced)
+    kernel.dmesg_restrict: 1
+    kernel.kptr_restrict: 2
+    kernel.yama.ptrace_scope: 1
+    # Filesystem security
     fs.suid_dumpable: 0
     fs.protected_hardlinks: 1
     fs.protected_symlinks: 1
 
   strict:
-    kernel.dmesg_restrict: 1
-    kernel.kptr_restrict: 2
-    kernel.yama.ptrace_scope: 3
-    kernel.unprivileged_bpf_disabled: 1
-    net.core.bpf_jit_harden: 2
-    net.ipv4.conf.all.log_martians: 1
-    net.ipv4.conf.default.log_martians: 1
+    # Network security (maximum)
+    net.ipv4.ip_forward: 0
     net.ipv4.conf.all.send_redirects: 0
-    net.ipv4.conf.default.send_redirects: 0
     net.ipv4.conf.all.accept_redirects: 0
+    net.ipv4.conf.all.secure_redirects: 0
+    net.ipv4.conf.default.send_redirects: 0
     net.ipv4.conf.default.accept_redirects: 0
+    net.ipv4.conf.default.secure_redirects: 0
     net.ipv6.conf.all.accept_redirects: 0
     net.ipv6.conf.default.accept_redirects: 0
-    net.ipv4.conf.all.secure_redirects: 0
-    net.ipv4.conf.default.secure_redirects: 0
+    net.ipv4.icmp_echo_ignore_broadcasts: 1
+    net.ipv4.conf.all.log_martians: 1
+    net.ipv4.conf.default.log_martians: 1
+    # Kernel security (maximum)
+    kernel.dmesg_restrict: 1
+    kernel.kptr_restrict: 2
+    kernel.yama.ptrace_scope: 2
+    kernel.unprivileged_bpf_disabled: 1
+    net.core.bpf_jit_harden: 2
+    # Filesystem security (maximum)
     fs.suid_dumpable: 0
     fs.protected_hardlinks: 1
     fs.protected_symlinks: 1
     fs.protected_fifos: 2
     fs.protected_regular: 2
-
-# Disabled network protocols
-security_disabled_protocols:
-  - dccp
-  - sctp
-  - rds
-  - tipc
 
 # Security limits by compliance level
 security_limits:
@@ -86,19 +96,9 @@ security_critical_files:
   - { path: "/etc/group", mode: "0644" }
   - { path: "/etc/gshadow", mode: "0600" }
   - { path: "/etc/sudoers", mode: "0440" }
-  - { path: "/etc/ssh/sshd_config", mode: "0600" }
-
-# Critical directories to monitor
-security_critical_directories:
-  - "/etc"
-  - "/bin"
-  - "/sbin"
-  - "/usr/bin"
-  - "/usr/sbin"
 
 # Unused services to disable
 security_unused_services:
   - avahi-daemon
   - cups
   - bluetooth
-  - rpcbind

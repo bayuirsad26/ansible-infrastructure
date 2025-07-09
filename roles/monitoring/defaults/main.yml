@@ -1,28 +1,24 @@
 ---
-# Modern Monitoring Role - Essential Variables Only
-# Focus on observability agents with sensible defaults
+# Optimized Monitoring Role - Package Manager First
+# Simplified for basic observability needs
 
 # Node Exporter configuration
 monitoring_node_exporter_enabled: true
 monitoring_node_exporter_version: "1.8.2"
 monitoring_node_exporter_port: 9100
-monitoring_node_exporter_user: "node-exporter"
+monitoring_node_exporter_user: "prometheus"
 
 # Service binding
-monitoring_bind_address: "0.0.0.0"  # Set to "127.0.0.1" for localhost only
+monitoring_bind_address: "0.0.0.0"  # Change to "127.0.0.1" for localhost only
 
 # Service discovery and labels
 monitoring_service_discovery: true
-monitoring_environment: "{{ ansible_environment | default('production') }}"
+monitoring_environment: "{{ environment | default('production') }}"
 monitoring_labels: {}
 
 # Container monitoring
 monitoring_container_aware: true
 monitoring_docker_metrics: true
 
-# Health checks
-monitoring_health_checks: true
-
-# Security
-monitoring_enable_tls: false
-monitoring_web_config_file: ""
+# Package manager preference
+monitoring_prefer_package: true

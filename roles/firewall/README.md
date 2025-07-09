@@ -1,32 +1,28 @@
-# Firewall Role - Network Security
+# Firewall Role - Auto-Integrated Network Security
 
-Modern network security configuration with OS-appropriate firewall management.
+Modern firewall configuration with automatic service discovery and OS-appropriate management.
 
 ## What This Role Does
 
 - ✅ Configures OS-appropriate firewalls (UFW/firewalld)
+- ✅ Automatically discovers services from other roles
 - ✅ Implements security-first default policies
-- ✅ Manages port access with security groups style rules
-- ✅ Integrates with infrastructure services automatically
-- ✅ Handles container-aware networking (Docker)
-- ✅ Provides basic intrusion prevention
-- ✅ Enables modern cloud-native security patterns
-- ✅ Automates firewall rule management
+- ✅ Handles container-aware networking
+- ✅ Provides rate limiting and logging
+- ✅ Enables cloud-native security patterns
 
 ## What This Role Doesn't Do
 
-- ❌ Complex network infrastructure setup (infrastructure tools)
-- ❌ Application-specific firewall rules (application concern)
-- ❌ Advanced network monitoring (monitoring role)
-- ❌ VPN or tunnel configuration (separate infrastructure)
-- ❌ Load balancer configuration (separate concern)
-- ❌ Deep packet inspection (specialized security tools)
+- ❌ Complex network infrastructure (use specialized tools)
+- ❌ Application-specific rules (application concern)
+- ❌ Advanced network monitoring (use monitoring role)
+- ❌ VPN configuration (separate infrastructure)
 
 ## Requirements
 
 - Ansible >= 2.15
 - UFW (Ubuntu/Debian) or firewalld (RedHat/CentOS)
-- Root/sudo access for firewall configuration
+- Root/sudo access
 
 ## Quick Start
 
@@ -34,8 +30,9 @@ Modern network security configuration with OS-appropriate firewall management.
 - hosts: all
   become: true
   roles:
-    - role: common       # Base system + SSH
-    - role: firewall     # Network security
+    - role: common      # Provides SSH port info
+    - role: monitoring  # Provides metrics port info
+    - role: firewall    # Auto-discovers and configures
 ```
 
 ## Variables
@@ -43,70 +40,36 @@ Modern network security configuration with OS-appropriate firewall management.
 ### Essential Variables
 
 ```yaml
-# Basic firewall settings
+# Basic configuration
 firewall_enabled: true
 firewall_default_policy: "deny"
 
-# Infrastructure service integration
-firewall_infrastructure_ports:
-  - { port: 22, proto: "tcp", comment: "SSH" }
-  - { port: 9100, proto: "tcp", comment: "Node Exporter" }
-
-# Custom rules
-firewall_allow_ports: []
-firewall_allow_sources: []
+# Source restrictions
+firewall_ssh_sources: "0.0.0.0/0"
+firewall_monitoring_sources: "127.0.0.1"
 
 # Container integration
 firewall_docker_integration: true
+
+# Rate limiting
+firewall_enable_rate_limiting: true
 ```
 
-## Security Groups Style Configuration
+## Auto-Discovery Features
 
-```yaml
-# Allow specific ports (security groups style)
-firewall_allow_ports:
-  - { port: 80, proto: "tcp", comment: "HTTP" }
-  - { port: 443, proto: "tcp", comment: "HTTPS" }
-  - { port: "8000:8100", proto: "tcp", comment: "App range" }
+The firewall role automatically discovers and configures:
 
-# Allow from specific sources
-firewall_allow_sources:
-  - { source: "10.0.0.0/8", comment: "Private network" }
-  - { source: "192.168.1.100", port: 22, comment: "Admin access" }
-```
+- **SSH Port**: From common role configuration
+- **Node Exporter**: From monitoring role configuration
+- **Traefik Ports**: From traefik role configuration
+- **Custom Services**: From other role variables
 
-## Infrastructure Integration
+## Security Features
 
-```yaml
-# Automatically integrates with other roles
-- role: common       # Opens SSH port automatically
-- role: monitoring   # Opens Node Exporter port automatically  
-- role: firewall     # Applies security rules
-```
-
-## Container Awareness
-
-```yaml
-# Docker integration
-firewall_docker_integration: true
-
-# Automatically handles:
-# - Docker bridge networks
-# - Container port publishing
-# - Docker daemon communication
-```
-
-## Cloud-Native Patterns
-
-```yaml
-# Environment-based rules
-firewall_environment_rules:
-  production:
-    - { port: 443, proto: "tcp", source: "0.0.0.0/0" }
-  development:
-    - { port: 80, proto: "tcp", source: "0.0.0.0/0" }
-    - { port: 443, proto: "tcp", source: "0.0.0.0/0" }
-```
+- **Default Deny**: Secure by default policy
+- **Rate Limiting**: SSH brute force protection
+- **Container Integration**: Docker-aware networking
+- **Logging**: Security event logging
 
 ## License
 

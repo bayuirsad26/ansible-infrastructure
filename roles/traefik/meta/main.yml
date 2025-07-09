@@ -3,7 +3,7 @@ galaxy_info:
   role_name: traefik
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Modern container-native reverse proxy with automatic SSL management
+  description: Container-native reverse proxy with automatic SSL
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -31,7 +31,6 @@ galaxy_info:
     - docker
     - ssl
     - letsencrypt
-    - servicediscovery
 
 dependencies:
   - role: docker

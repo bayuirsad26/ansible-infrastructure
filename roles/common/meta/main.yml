@@ -3,7 +3,7 @@ galaxy_info:
   role_name: common
   namespace: summitethic
   author: SummitEthic DevOps Team
-  description: Essential base system configuration and security hardening
+  description: Essential base system configuration with security hardening
   company: SummitEthic
   license: MIT
   min_ansible_version: "2.15"
@@ -29,6 +29,8 @@ galaxy_info:
     - hardening
     - base
     - essential
+    - fail2ban
+    - ssh
 
 dependencies: []
 

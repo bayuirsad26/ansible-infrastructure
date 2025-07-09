@@ -9,16 +9,9 @@ log:
   level: {{ traefik_log_level }}
   format: json
 
-accessLog:
-  format: json
-  fields:
-    headers:
-      defaultMode: keep
-
 api:
 {% if traefik_dashboard_enabled %}
   dashboard: true
-  debug: false
 {% else %}
   dashboard: false
 {% endif %}
@@ -37,9 +30,6 @@ entryPoints:
 
   websecure:
     address: ":{{ traefik_websecure_port }}"
-    http:
-      tls:
-        options: default
 
 providers:
   docker:
@@ -70,7 +60,6 @@ metrics:
   prometheus:
     addEntryPointsLabels: true
     addServicesLabels: true
-    addRoutersLabels: true
 
 ping:
   entryPoint: traefik

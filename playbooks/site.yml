@@ -1,0 +1,43 @@
+---
+- name: SummitEthic Infrastructure Setup
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Update package cache
+      ansible.builtin.package:
+        update_cache: true
+      tags: always
+
+  roles:
+    - role: common
+      tags: [common, base]
+
+    - role: security
+      when: security_level in ['moderate', 'strict']
+      tags: [security, hardening]
+
+    - role: docker
+      when: docker_enabled | default(false)
+      tags: [docker, containers]
+
+    - role: monitoring
+      when: monitoring_enabled | default(true)
+      tags: [monitoring, metrics]
+
+    - role: logging
+      when: logging_centralized | default(false)
+      tags: [logging, centralized]
+
+    - role: firewall
+      when: firewall_enabled | default(true)
+      tags: [firewall, security]
+
+    - role: backup
+      when: backup_enabled | default(false)
+      tags: [backup, disaster-recovery]
+
+    - role: traefik
+      when: traefik_enabled | default(false)
+      tags: [traefik, reverse-proxy]

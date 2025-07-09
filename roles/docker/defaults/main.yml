@@ -1,16 +1,23 @@
 ---
-# Modern Docker Role - Essential Variables Only
-# No configuration sprawl - keep it simple and efficient
+# Optimized Docker Role - Container Platform
+# Streamlined for efficiency and security
 
 # Users to add to docker group
 docker_users: []
 
-# Security hardening (enabled by default for ethical standards)
+# Security hardening (enabled by default)
 docker_security_enabled: true
 
-# Docker daemon custom configuration (optional override)
-# Use this to add custom settings to the default secure configuration
-docker_daemon_config: {}
+# Docker daemon configuration
+docker_daemon_config:
+  log-driver: "json-file"
+  log-opts:
+    max-size: "10m"
+    max-file: "3"
+  storage-driver: "overlay2"
+  exec-opts: ["native.cgroupdriver=systemd"]
+  live-restore: true
+  userland-proxy: false
 
 # Service management
 docker_service_state: started

@@ -1,32 +1,28 @@
 # Logging Role - Centralized Log Management
 
-Modern log management, rotation, and forwarding for centralized logging systems.
+Simplified log management and forwarding for centralized platforms like Loki or Elasticsearch.
 
 ## What This Role Does
 
-- ✅ Configures system logging (rsyslog/journald)
-- ✅ Sets up log rotation policies
-- ✅ Configures log forwarding to centralized systems
-- ✅ Enables structured logging (JSON format)
-- ✅ Manages container log integration (Docker)
-- ✅ Handles security event logging
-- ✅ Automates log retention and cleanup
-- ✅ Installs modern log shippers (Vector/Fluent Bit)
+- ✅ Configures system logging (rsyslog + journald)
+- ✅ Sets up log forwarding to centralized systems
+- ✅ Manages log rotation and retention
+- ✅ Handles container log integration
+- ✅ Automates log cleanup
+- ✅ Provides simple, reliable log shipping
 
 ## What This Role Doesn't Do
 
-- ❌ Log aggregation infrastructure (ELK/Loki servers)
-- ❌ Complex log analysis and parsing (analytics tools)
-- ❌ Log visualization and dashboards (Grafana/Kibana)
-- ❌ Application-specific logging (application concern)
-- ❌ Log monitoring and alerting (monitoring role)
-- ❌ Log storage infrastructure (infrastructure deployment)
+- ❌ Log aggregation infrastructure (use external)
+- ❌ Log analysis and parsing (use Loki/Elasticsearch)
+- ❌ Log visualization (use Grafana/Kibana)
+- ❌ Complex log processing (use external tools)
 
 ## Requirements
 
 - Ansible >= 2.15
-- Internet access for downloading log shippers
 - Centralized logging endpoint (optional)
+- Network access to logging server
 
 ## Quick Start
 
@@ -34,8 +30,9 @@ Modern log management, rotation, and forwarding for centralized logging systems.
 - hosts: all
   become: true
   roles:
-    - role: common       # Base system
-    - role: logging      # Log management
+    - role: logging
+      logging_enable_forwarding: true
+      logging_destination: "loki-server:514"
 ```
 
 ## Variables
@@ -44,76 +41,34 @@ Modern log management, rotation, and forwarding for centralized logging systems.
 
 ```yaml
 # Log forwarding
-logging_enable_forwarding: true
-logging_destination: "logs.example.com:514"
+logging_enable_forwarding: false
+logging_destination: "loki-server:514"
+logging_protocol: "tcp"
 
-# Log shipper choice
-logging_shipper: "vector"  # vector, fluent-bit, rsyslog
-
-# Log format
-logging_format: "json"     # json, traditional
-
-# Container logging
+# Container integration
 logging_container_aware: true
+logging_docker_logs: true
 
-# Log retention
+# Retention
 logging_retention_days: 30
 ```
 
-## Modern Log Shipping
+## Integration with Centralized Platforms
 
-### Vector (Recommended)
+### Loki Integration
 
 ```yaml
-logging_shipper: "vector"
-logging_vector_config:
-  inputs:
-    - system_logs
-    - docker_logs
-  outputs:
-    - elasticsearch
-    - loki
+logging_enable_forwarding: true
+logging_destination: "loki-server:514"
+logging_protocol: "tcp"
 ```
 
-### Fluent Bit
+### Elasticsearch Integration
 
 ```yaml
-logging_shipper: "fluent-bit"
-logging_fluent_bit_outputs:
-  - type: elasticsearch
-    host: logs.example.com
-    port: 9200
-```
-
-### Traditional Rsyslog
-
-```yaml
-logging_shipper: "rsyslog"
-logging_rsyslog_remote: "logs.example.com:514"
-```
-
-## Structured Logging
-
-```yaml
-# JSON format for modern log analysis
-logging_format: "json"
-logging_json_fields:
-  - timestamp
-  - hostname
-  - service
-  - level
-  - message
-```
-
-## Container Integration
-
-```yaml
-# Docker log management
-logging_container_aware: true
-logging_docker_driver: "json-file"
-logging_docker_options:
-  max-size: "10m"
-  max-file: "3"
+logging_enable_forwarding: true
+logging_destination: "elasticsearch-server:514"
+logging_protocol: "tcp"
 ```
 
 ## License

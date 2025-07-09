@@ -1,7 +1,6 @@
 ---
-# Modern Common Role - Single Task File
-# Essential base system configuration only
-# Uses FQCN throughout for future-proofing
+# Optimized Common Role - Enhanced with Security Basics
+# Single task file approach for efficiency
 
 - name: Set system timezone
   community.general.timezone:
@@ -21,7 +20,7 @@
 - name: Upgrade all packages
   ansible.builtin.package:
     name: "*"
-    state: present
+    state: latest
   when: common_update_packages
   tags: [common, packages]
 
@@ -37,6 +36,25 @@
     state: present
   when: common_install_security_packages
   tags: [common, security, packages]
+
+- name: Configure automatic security updates
+  ansible.builtin.template:
+    src: auto-upgrades.j2
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: '0644'
+  when:
+    - common_enable_auto_updates
+    - ansible_os_family == "Debian"
+  tags: [common, security, auto-updates]
+
+- name: Configure fail2ban
+  ansible.builtin.template:
+    src: fail2ban-jail.j2
+    dest: /etc/fail2ban/jail.local
+    mode: '0644'
+  when: common_enable_fail2ban
+  notify: Restart fail2ban
+  tags: [common, security, fail2ban]
 
 - name: Ensure sudo group exists
   ansible.builtin.group:
@@ -93,21 +111,20 @@
         validate: 'sshd -t -f %s'
       notify: Restart SSH
 
-- name: Apply basic kernel security parameters
-  ansible.posix.sysctl:
-    name: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-    reload: true
-  loop: "{{ common_kernel_security_params | dict2items }}"
-  tags: [common, security]
-
 - name: Ensure SSH service is running
   ansible.builtin.systemd_service:
     name: "{{ common_ssh_service }}"
     state: started
     enabled: true
   tags: [common, ssh, service]
+
+- name: Enable fail2ban service
+  ansible.builtin.systemd_service:
+    name: fail2ban
+    state: started
+    enabled: true
+  when: common_enable_fail2ban
+  tags: [common, security, fail2ban]
 
 - name: Display common role completion info
   ansible.builtin.debug:
@@ -117,4 +134,6 @@
       - "SSH hardening: {{ 'Enabled' if common_harden_ssh else 'Disabled' }}"
       - "SSH port: {{ common_ssh_port }}"
       - "Timezone: {{ common_timezone }}"
+      - "Fail2ban: {{ 'Enabled' if common_enable_fail2ban else 'Disabled' }}"
+      - "Auto-updates: {{ 'Enabled' if common_enable_auto_updates else 'Disabled' }}"
   tags: [common, info]

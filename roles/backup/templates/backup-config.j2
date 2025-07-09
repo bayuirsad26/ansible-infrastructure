@@ -1,0 +1,20 @@
+# Backup configuration
+# Managed by Ansible - Do not edit manually
+
+BACKUP_USER="{{ backup_user }}"
+BACKUP_LOCAL_PATH="{{ backup_local_path }}"
+BACKUP_RETENTION_DAYS="{{ backup_retention_days }}"
+BACKUP_COMPRESSION="{{ backup_compression | lower }}"
+BACKUP_CLOUD_ENABLED="{{ backup_cloud_enabled | lower }}"
+BACKUP_CLOUD_DESTINATION="{{ backup_cloud_destination }}"
+
+# System paths to backup
+BACKUP_SYSTEM_PATHS=(
+{% for path in backup_system_paths %}
+    "{{ path }}"
+{% endfor %}
+)
+
+# Docker configuration
+BACKUP_DOCKER_ENABLED="{{ backup_docker_enabled | lower }}"
+BACKUP_DOCKER_VOLUMES="{{ backup_docker_volumes | lower }}"

@@ -9,21 +9,18 @@ common_essential_packages:
   - unzip
   - tar
   - rsync
+  - net-tools
 
-# Security packages
+# Enhanced security packages
 common_security_packages:
   - fail2ban
   - ufw
+  - unattended-upgrades
+  - apt-listchanges
 
 # OS-specific configurations
 common_sudo_group: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
 common_ssh_service: "{{ 'ssh' if ansible_os_family == 'Debian' else 'sshd' }}"
 
-# Basic kernel security parameters
-common_kernel_security_params:
-  net.ipv4.ip_forward: 0
-  net.ipv4.conf.all.send_redirects: 0
-  net.ipv4.conf.all.accept_redirects: 0
-  net.ipv4.conf.all.secure_redirects: 0
-  net.ipv4.icmp_echo_ignore_broadcasts: 1
-  kernel.dmesg_restrict: 1
+# REMOVED: kernel security parameters (moved to security role)
+# This eliminates redundancy

@@ -14,7 +14,7 @@ Protocol 2
 LoginGraceTime 2m
 PermitRootLogin {{ 'no' if common_disable_root_login else 'yes' }}
 StrictModes yes
-MaxAuthTries 3
+MaxAuthTries {{ common_ssh_max_auth_tries }}
 MaxSessions 5
 
 # Public key authentication

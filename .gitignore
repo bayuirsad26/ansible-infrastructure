@@ -1,47 +1,39 @@
-# Ansible Project .gitignore
-# Comprehensive gitignore for professional Ansible infrastructure projects
+# Ansible Project .gitignore - Optimized
+# SummitEthic Infrastructure Automation
 
 ####################
 # Ansible Specific #
 ####################
 
-# Ansible retry files
+# Retry files
 *.retry
 
-# Ansible vault password files
-.vault_pass
-.vault_password
-vault_pass.txt
-vault_password.txt
+# Vault files
+.vault_pass*
+vault_pass*
 .ansible_vault_password
+vault_password*
 
 # Ansible logs
 *.log
 logs/
 ansible.log
 
-# Ansible temporary files
+# Ansible cache
 .ansible/
 .ansible_async/
 .tmp/
-
-# Facts cache
 fact_cache/
 ansible_facts_cache/
-/tmp/ansible_facts_cache
 
-# Collections and roles downloaded via galaxy
+# Collections and roles
 collections/ansible_collections/*/*
-!collections/ansible_collections/company/
+!collections/ansible_collections/summitethic/
 roles/external/
 galaxy_roles/
 
-# Molecule test artifacts
+# Test artifacts
 .molecule/
-molecule/*/molecule.yml.bak
-molecule/*/*/.molecule/
-
-# Test results
 .pytest_cache/
 .coverage
 htmlcov/
@@ -53,7 +45,7 @@ junit.xml
 # Secrets & Keys   #
 ####################
 
-# Private keys
+# SSH keys
 *.pem
 *.key
 *.p12
@@ -63,12 +55,12 @@ id_rsa*
 id_ed25519*
 id_ecdsa*
 
-# SSL certificates (except examples)
+# SSL certificates
 ssl/
 certs/
 *.csr
 
-# Sensitive data files
+# Sensitive files
 secrets.yml
 secrets.yaml
 credentials.yml
@@ -76,32 +68,26 @@ credentials.yaml
 .secrets
 .credentials
 
-# Environment files with secrets
-.env
-.env.local
-.env.*.local
+# Environment files
+.env*
 environment
 
-# Terraform state files (if included)
-terraform.tfstate
-terraform.tfstate.backup
-*.tfvars
-.terraform/
-.terraform.lock.hcl
+# Cloud credentials
+.aws/
+.gcp/
+.azure/
+aws-credentials*
+gcp-credentials*
+azure-credentials*
 
 ####################
 # Python           #
 ####################
 
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -115,28 +101,10 @@ parts/
 sdist/
 var/
 wheels/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
-
-# PyInstaller
-*.manifest
-*.spec
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
 
 # Virtual environments
 env/
@@ -148,12 +116,6 @@ venv.bak/
 ansible-env/
 ansible-venv/
 
-# pipenv
-Pipfile.lock
-
-# Poetry
-poetry.lock
-
 ####################
 # IDE & Editors    #
 ####################
@@ -164,11 +126,7 @@ poetry.lock
 .vscode/launch.json
 .vscode/extensions.json
 .vscode/*.code-snippets
-
-# Local History for Visual Studio Code
 .history/
-
-# Built Visual Studio Code Extensions
 *.vsix
 
 # PyCharm
@@ -176,10 +134,6 @@ poetry.lock
 *.iws
 *.iml
 *.ipr
-
-# Sublime Text
-*.sublime-project
-*.sublime-workspace
 
 # Vim
 *.swp
@@ -198,9 +152,6 @@ auto-save-list
 tramp
 .\#*
 
-# Nano
-*.save
-
 ####################
 # OS Generated     #
 ####################
@@ -218,56 +169,34 @@ Icon?
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
-.AppleDB
-.AppleDesktop
-Network Trash Folder
-Temporary Items
-.apdisk
 
 # Windows
 Thumbs.db
-Thumbs.db:encryptable
 ehthumbs.db
-ehthumbs_vista.db
-*.stackdump
-[Dd]esktop.ini
+Desktop.ini
 $RECYCLE.BIN/
 *.cab
 *.msi
-*.msix
 *.msm
 *.msp
 *.lnk
 
 # Linux
-*~
 .fuse_hidden*
 .directory
 .Trash-*
 .nfs*
 
 ####################
-# Docker           #
-####################
-
-# Docker files (if used for testing)
-.dockerignore
-Dockerfile.bak
-docker-compose.override.yml
-docker-compose.override.yaml
-
-####################
 # Backup Files     #
 ####################
 
-# Backup files
 *.bak
 *.backup
 *.old
 *.orig
 *.save
 *~
-*.tmp
 
 # Archives
 *.tar
@@ -281,121 +210,60 @@ docker-compose.override.yaml
 # Local Config     #
 ####################
 
-# Local configuration overrides
+# Local overrides
 local.yml
 local.yaml
 override.yml
 override.yaml
 local_settings.py
 
-# Personal notes and documentation
+# Personal files
 NOTES.md
 TODO.md
 PERSONAL.md
 notes/
 personal/
 
-# Custom inventory files for local testing
+# Test inventories
 inventories/local/
 inventories/personal/
 inventories/test/
 
 ####################
-# Build Artifacts  #
+# Docker           #
 ####################
 
-# Compiled files
-*.com
-*.class
-*.dll
-*.exe
-*.o
-*.so
-
-# Package files
-*.war
-*.nar
-*.ear
-*.tar
-*.tar.gz
-*.rar
-
-####################
-# Temporary Files  #
-####################
-
-# Temporary directories
-tmp/
-temp/
-.tmp/
-.temp/
-
-# Cache directories
-.cache/
-cache/
-.ansible-cache/
-
-# Lock files
-*.lock
-package-lock.json
-
-####################
-# Cloud Specific   #
-####################
-
-# AWS
-.aws/
-aws-credentials
-
-# GCP
-gcp-credentials.json
-service-account.json
-.gcp/
-
-# Azure
-.azure/
-azure-credentials
+docker-compose.override.yml
+docker-compose.override.yaml
+.dockerignore
 
 ####################
 # Monitoring       #
 ####################
 
-# Prometheus data
 prometheus_data/
 grafana_data/
-
-# Logs
-log/
-logs/
-*.log
-
-####################
-# Custom Additions #
-####################
-
-# Add your custom ignore patterns here
-# project-specific/
-# custom-files/
+loki_data/
 
 ####################
 # Keep Examples    #
 ####################
 
-# Force include example files
-!examples/
-!docs/examples/
 !*.example
 !*-example.*
 !*.sample
 !*-sample.*
+!examples/
+!docs/examples/
 
 ####################
-# Git Specific     #
+# Project Specific #
 ####################
 
-# Git patches
-*.patch
-*.diff
+# Deployment artifacts
+deployment-artifacts/
+.deployment/
 
-# Merge conflict backups
-*.orig
+# Custom exclusions
+custom-configs/
+site-specific/

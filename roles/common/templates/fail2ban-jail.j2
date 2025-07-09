@@ -1,0 +1,12 @@
+[DEFAULT]
+bantime = 1h
+findtime = 10m
+maxretry = 3
+
+[sshd]
+enabled = true
+port = {{ common_ssh_port }}
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = {{ common_ssh_max_auth_tries }}
+bantime = 1h

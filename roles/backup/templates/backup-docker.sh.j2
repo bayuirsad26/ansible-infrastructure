@@ -1,0 +1,52 @@
+#!/bin/bash
+# Docker backup script
+# Managed by Ansible - Do not edit manually
+
+set -euo pipefail
+
+# Configuration
+BACKUP_DIR="{{ backup_local_path }}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+LOG_FILE="/var/log/backup/docker-backup.log"
+
+# Create directories
+mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$BACKUP_DIR/docker/$TIMESTAMP"
+
+# Logging function
+log() {
+    echo "[$TIMESTAMP] $1" | tee -a "$LOG_FILE"
+}
+
+log "Starting Docker backup"
+
+# Backup Docker volumes
+if {{ backup_docker_volumes | lower }}; then
+    log "Backing up Docker volumes"
+    
+    # Get list of volumes
+    VOLUMES=$(docker volume ls -q)
+    
+    for volume in $VOLUMES; do
+        log "Backing up volume: $volume"
+        
+        # Create temporary container to access volume
+        docker run --rm \
+            -v "$volume":/volume:ro \
+            -v "$BACKUP_DIR/docker/$TIMESTAMP":/backup \
+            alpine tar czf "/backup/$volume.tar.gz" -C /volume .
+    done
+fi
+
+# Backup Docker Compose directories
+{% for compose_dir in backup_docker_compose_dirs %}
+if [[ -d "{{ compose_dir }}" ]]; then
+    log "Backing up Docker Compose directory: {{ compose_dir }}"
+    rsync -az "{{ compose_dir }}/" "$BACKUP_DIR/docker/$TIMESTAMP/compose/{{ compose_dir | basename }}/"
+fi
+{% endfor %}
+
+# Cleanup old backups
+find "$BACKUP_DIR/docker" -type d -mtime +{{ backup_retention_days }} -exec rm -rf {} \; 2>/dev/null || true
+
+log "Docker backup completed: $BACKUP_DIR/docker/$TIMESTAMP"

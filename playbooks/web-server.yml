@@ -1,0 +1,55 @@
+---
+- name: Web Server Setup with Traefik
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    docker_enabled: true
+    traefik_enabled: true
+    monitoring_enabled: true
+    logging_centralized: true
+    firewall_enabled: true
+    security_level: "moderate"
+    backup_enabled: true
+
+  pre_tasks:
+    - name: Validate required variables
+      ansible.builtin.assert:
+        that:
+          - domain_name != ""
+          - letsencrypt_email != ""
+        fail_msg: "domain_name and letsencrypt_email are required for web server setup"
+
+  roles:
+    - role: common
+      common_admin_users: "{{ admin_users }}"
+
+    - role: security
+      security_compliance_level: "{{ security_level }}"
+
+    - role: docker
+      docker_users: "{{ container_users + [item.name for item in admin_users] }}"
+      docker_security_enabled: true
+
+    - role: monitoring
+      monitoring_node_exporter_enabled: true
+      monitoring_container_aware: true
+      monitoring_bind_address: "0.0.0.0"
+
+    - role: logging
+      logging_enable_forwarding: true
+      logging_destination: "{{ logging_endpoint }}"
+      logging_container_aware: true
+
+    - role: firewall
+      firewall_docker_integration: true
+
+    - role: backup
+      backup_enabled: true
+      backup_docker_enabled: true
+
+    - role: traefik
+      traefik_domain: "{{ domain_name }}"
+      traefik_email: "{{ letsencrypt_email }}"
+      traefik_dashboard_enabled: true

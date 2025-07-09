@@ -1,24 +1,22 @@
 # Traefik Role - Container-Native Reverse Proxy
 
-Modern reverse proxy and load balancer designed specifically for containerized applications.
+Modern reverse proxy with automatic SSL, service discovery, and container-native design.
 
 ## What This Role Does
 
-- ✅ Deploys Traefik as a Docker container
+- ✅ Deploys Traefik as Docker container
 - ✅ Configures automatic service discovery
 - ✅ Sets up Let's Encrypt SSL automation
 - ✅ Enables container-based routing via labels
-- ✅ Provides real-time metrics and monitoring
-- ✅ Implements security headers and rate limiting
+- ✅ Provides security headers and rate limiting
 - ✅ Handles load balancing and health checks
-- ✅ Zero-downtime configuration updates
 
 ## What This Role Doesn't Do
 
+- ❌ Application deployment (use Docker Compose)
 - ❌ Static file serving (use dedicated containers)
-- ❌ Application deployment (use Docker Compose/Kubernetes)
 - ❌ Complex application logic (application concern)
-- ❌ Database or cache management (separate concerns)
+- ❌ Database management (separate concerns)
 
 ## Requirements
 
@@ -30,10 +28,10 @@ Modern reverse proxy and load balancer designed specifically for containerized a
 ## Quick Start
 
 ```yaml
-- hosts: docker_hosts
+- hosts: web_servers
   become: true
   roles:
-    - role: docker      # Must be applied first
+    - role: docker      # Required first
     - role: traefik
       traefik_domain: "summitethic.com"
       traefik_email: "admin@summitethic.com"
@@ -45,75 +43,43 @@ Modern reverse proxy and load balancer designed specifically for containerized a
 
 ```yaml
 # Basic configuration
-traefik_enabled: true
-traefik_domain: "example.com"
-traefik_email: "admin@example.com"
+traefik_domain: "summitethic.com"
+traefik_email: "admin@summitethic.com"
 
-# Network configuration
-traefik_network: "traefik"
+# Network ports
 traefik_web_port: 80
 traefik_websecure_port: 443
 
-# Dashboard access
+# Dashboard
 traefik_dashboard_enabled: true
 traefik_dashboard_subdomain: "traefik"
 
-# Let's Encrypt
+# SSL automation
 traefik_letsencrypt_enabled: true
 traefik_letsencrypt_staging: false
 ```
 
-## Container-Native Routing
+## Container Integration
 
-### Automatic Service Discovery
+Applications just need Docker labels:
 
 ```yaml
-# Your application containers just need labels:
-version: '3.8'
 services:
   webapp:
-    image: summitethic/webapp:latest
+    image: myapp:latest
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.webapp.rule=Host(`app.summitethic.com`)"
       - "traefik.http.routers.webapp.tls.certresolver=letsencrypt"
-      - "traefik.http.services.webapp.loadbalancer.server.port=8080"
-```
-
-### Advanced Routing
-
-```yaml
-# Multiple domains, path-based routing, middleware
-labels:
-  - "traefik.enable=true"
-  - "traefik.http.routers.api.rule=Host(`api.summitethic.com`) && PathPrefix(`/v1`)"
-  - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-  - "traefik.http.routers.api.middlewares=auth,ratelimit"
-  - "traefik.http.middlewares.auth.basicauth.users=admin:$$2y$$10$$..."
-  - "traefik.http.middlewares.ratelimit.ratelimit.burst=100"
-```
-
-## Integration with Infrastructure
-
-```yaml
-# Perfect integration with your existing roles
-- role: common      # Base system + SSH
-- role: security    # Advanced hardening
-- role: docker      # Container platform (required)
-- role: monitoring  # Observability (metrics integration)
-- role: logging     # Log management (structured logs)
-- role: firewall    # Network security (opens 80/443)
-- role: traefik     # Container reverse proxy (this role)
 ```
 
 ## Modern Benefits
 
-- **Zero Configuration**: Automatic service discovery via Docker labels
-- **SSL Automation**: Let's Encrypt certificates with auto-renewal
+- **Zero Configuration**: Automatic service discovery
+- **SSL Automation**: Let's Encrypt with auto-renewal
 - **Dynamic Updates**: Add/remove services without restart
-- **Container-Native**: Built for modern containerized infrastructure
-- **Monitoring Ready**: Built-in Prometheus metrics
-- **Security First**: Automatic security headers, rate limiting
+- **Container-Native**: Built for modern infrastructure
+- **Security First**: Automatic security headers
 
 ## License
 

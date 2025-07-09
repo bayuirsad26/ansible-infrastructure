@@ -1,0 +1,7 @@
+---
+# Firewall packages by OS family
+firewall_packages:
+  Debian:
+    - ufw
+  RedHat:
+    - firewalld

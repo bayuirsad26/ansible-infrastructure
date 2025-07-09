@@ -10,37 +10,28 @@
 # Failure Mode (0=silent, 1=printk, 2=panic)
 -f 1
 
-{% if security_audit_rules in ['moderate', 'strict'] %}
-# Monitor file access
+# Basic monitoring for all levels
 -w /etc/passwd -p wa -k identity
 -w /etc/group -p wa -k identity
 -w /etc/shadow -p wa -k identity
 -w /etc/sudoers -p wa -k identity
 
-# Monitor system configuration
+{% if security_audit_rules in ['moderate', 'strict'] %}
+# Enhanced monitoring for moderate/strict levels
 -w /etc/ssh/sshd_config -p wa -k sshd
 -w /etc/audit/ -p wa -k auditconfig
+-w /var/log/wtmp -p wa -k logins
+-w /var/log/btmp -p wa -k logins
 
-# Monitor privileged commands
+# Privileged commands
 -a always,exit -F arch=b64 -S execve -F euid=0 -F key=rootcmd
 -a always,exit -F arch=b32 -S execve -F euid=0 -F key=rootcmd
 {% endif %}
 
 {% if security_audit_rules == 'strict' %}
-# Extensive monitoring for strict mode
--w /var/log/wtmp -p wa -k logins
--w /var/log/btmp -p wa -k logins
--w /var/run/utmp -p wa -k session
-
-# Network configuration
--a always,exit -F arch=b64 -S socket -F a0=10 -k network
--a always,exit -F arch=b32 -S socket -F a0=10 -k network
-
-# File system monitoring
+# Strict monitoring
 -a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -k perm_mod
 -a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -k perm_mod
-
-# Process monitoring
 -a always,exit -F arch=b64 -S clone -S fork -S vfork -k process
 -a always,exit -F arch=b32 -S clone -S fork -S vfork -k process
 {% endif %}

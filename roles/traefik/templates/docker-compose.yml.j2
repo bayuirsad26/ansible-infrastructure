@@ -34,18 +34,12 @@ services:
 {% if traefik_letsencrypt_enabled %}
       - "traefik.http.routers.traefik.tls.certresolver={{ traefik_letsencrypt_resolver }}"
 {% endif %}
-{% if traefik_dashboard_auth and traefik_dashboard_users_hashed | default([]) | length > 0 %}
-      - "traefik.http.routers.traefik.middlewares=dashboard-auth@file{% if traefik_security_headers %},security-headers@file{% endif %}"
 {% endif %}
-{% endif %}
-    environment:
-      - TRAEFIK_LOG_LEVEL={{ traefik_log_level }}
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
 
 networks:
   {{ traefik_network }}:

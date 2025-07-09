@@ -5,5 +5,7 @@ monitoring_arch_map:
   aarch64: "arm64"
   armv7l: "armv7"
 
-# Default Node Exporter version (latest stable)
-monitoring_node_exporter_version_default: "1.8.2"
+# Package names by OS family
+monitoring_package_names:
+  Debian: "prometheus-node-exporter"
+  RedHat: "golang-github-prometheus-node-exporter"

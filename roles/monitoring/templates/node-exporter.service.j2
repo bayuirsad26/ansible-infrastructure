@@ -18,9 +18,6 @@ ExecStart=/usr/local/bin/node_exporter \
 {% if monitoring_container_aware and ansible_facts['services']['docker.service'] is defined %}
     --collector.docker \
 {% endif %}
-{% if monitoring_enable_tls %}
-    --web.config.file=/etc/node-exporter/web-config.yml \
-{% endif %}
     --collector.systemd \
     --collector.processes
 
@@ -33,6 +30,7 @@ StartLimitInterval=0
 NoNewPrivileges=yes
 ProtectHome=yes
 ProtectSystem=strict
+ReadWritePaths=/var/lib/node-exporter
 ProtectHostname=yes
 ProtectControlGroups=yes
 ProtectKernelModules=yes

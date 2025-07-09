@@ -1,26 +1,29 @@
-# Common Role - Modern & Efficient
+# Common Role - Essential System Foundation
 
-Essential base system configuration and security hardening.
+Modern base system configuration with security hardening, fail2ban, and automatic updates.
 
 ## What This Role Does
 
-- ✅ Installs essential packages
-- ✅ Creates admin users with SSH keys
-- ✅ Hardens SSH configuration
-- ✅ Applies basic security settings
+- ✅ Installs essential packages and security tools
+- ✅ Creates admin users with SSH keys and sudo access
+- ✅ Hardens SSH configuration with security best practices
+- ✅ Configures fail2ban for intrusion prevention
+- ✅ Enables automatic security updates
 - ✅ Sets up system basics (timezone, hostname)
+- ✅ Provides secure foundation for other roles
 
 ## What This Role Doesn't Do
 
-- ❌ Monitoring (use dedicated monitoring role)
-- ❌ Logging (use dedicated logging role)
-- ❌ Firewall (use dedicated firewall role)
-- ❌ Complex security audit (use dedicated security role)
+- ❌ Advanced security hardening (use security role)
+- ❌ Monitoring setup (use monitoring role)
+- ❌ Firewall configuration (use firewall role)
+- ❌ Container platform (use docker role)
 
 ## Requirements
 
 - Ansible >= 2.15
-- Target: Ubuntu 20.04+, RHEL/CentOS 8+, Debian 11+
+- Root/sudo access on target systems
+- SSH key for admin user access
 
 ## Quick Start
 
@@ -40,45 +43,47 @@ Essential base system configuration and security hardening.
 ### Essential Variables
 
 ```yaml
-# Admin users to create
-common_admin_users: []
+# Admin users with SSH access
+common_admin_users:
+  - name: admin
+    ssh_keys:
+      - "ssh-rsa AAAAB3... admin@summitethic.com"
+    sudo_nopasswd: false
 
-# Essential packages to install
-common_packages: []  # Uses sensible defaults
-
-# System settings
+# System configuration
 common_timezone: "UTC"
-common_ssh_port: 22
+common_hostname: "{{ inventory_hostname }}"
 
-# Security settings (enabled by default)
-common_harden_ssh: true
+# SSH security
+common_ssh_port: 22
 common_disable_root_login: true
+common_ssh_password_auth: false
+
+# Security features
+common_enable_fail2ban: true
+common_enable_auto_updates: true
 ```
 
-## Example Usage
+## Security Features
+
+- **SSH Hardening**: Disabled root login, key-only authentication, rate limiting
+- **Fail2ban**: Automatic intrusion detection and prevention
+- **Auto Updates**: Automatic security updates for Ubuntu/Debian
+- **User Management**: Secure sudo configuration
+- **Package Management**: Essential security packages
+
+## Integration
+
+This role provides the foundation for other roles:
 
 ```yaml
-- role: common
-  common_admin_users:
-    - name: devops
-      ssh_keys:
-        - "ssh-rsa AAAAB3... devops@summitethic.com"
-    - name: deploy
-      ssh_keys:
-        - "ssh-rsa AAAAB3... deploy@summitethic.com"
-  common_timezone: "Asia/Jakarta"
-  common_packages:
-    - git
-    - curl
-    - htop
+roles:
+  - role: common      # Base system (this role)
+  - role: security    # Advanced hardening
+  - role: docker      # Container platform
+  - role: monitoring  # Observability
+  - role: firewall    # Network security
 ```
-
-## Security Features (Enabled by Default)
-
-- SSH hardening (disable root, key-only auth)
-- Secure sudo configuration
-- Essential security packages
-- Basic system hardening
 
 ## License
 

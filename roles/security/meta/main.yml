@@ -28,6 +28,7 @@ galaxy_info:
     - hardening
     - audit
     - compliance
+    - kernel
     - cis
 
 dependencies:

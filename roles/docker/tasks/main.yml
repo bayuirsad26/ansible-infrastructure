@@ -1,7 +1,6 @@
 ---
-# Modern Docker installation with security hardening
-# Single file approach - no unnecessary complexity
-# Uses FQCN and community.docker collection extensively
+# Optimized Docker Role - Streamlined Installation
+# Focus on essential container platform setup
 
 - name: Load OS-specific variables
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
@@ -13,52 +12,48 @@
     state: absent
   tags: [docker, install]
 
-- name: Create keyring directory (Debian/Ubuntu)
-  ansible.builtin.file:
-    path: /etc/apt/keyrings
-    state: directory
-    mode: '0755'
+- name: Install Docker repository and packages (Debian/Ubuntu)
   when:
     - ansible_os_family == "Debian"
     - docker_add_repo
   tags: [docker, install]
+  block:
+    - name: Create keyring directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
 
-- name: Install Docker repository key (Debian/Ubuntu)
-  ansible.builtin.get_url:
-    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
-    dest: /etc/apt/keyrings/docker.asc
-    mode: '0644'
-  when:
-    - ansible_os_family == "Debian"
-    - docker_add_repo
-  tags: [docker, install]
+    - name: Install Docker repository key
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
 
-- name: Add Docker repository (Debian/Ubuntu)
-  ansible.builtin.apt_repository:
-    repo: >-
-      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
-      https://download.docker.com/linux/{{ ansible_distribution | lower }}
-      {{ ansible_distribution_release }} stable
-    filename: docker
-    update_cache: true
-  when:
-    - ansible_os_family == "Debian"
-    - docker_add_repo
-  tags: [docker, install]
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/{{ ansible_distribution | lower }}
+          {{ ansible_distribution_release }} stable
+        filename: docker
+        update_cache: true
 
-- name: Add Docker repository (RedHat/CentOS)
-  ansible.builtin.yum_repository:
-    name: docker-ce
-    description: Docker CE Repository
-    baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
-    gpgkey: https://download.docker.com/linux/centos/gpg
-    gpgcheck: true
+- name: Install Docker repository and packages (RedHat/CentOS)
   when:
     - ansible_os_family == "RedHat"
     - docker_add_repo
   tags: [docker, install]
+  block:
+    - name: Add Docker repository
+      ansible.builtin.yum_repository:
+        name: docker-ce
+        description: Docker CE Repository
+        baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+        gpgkey: https://download.docker.com/linux/centos/gpg
+        gpgcheck: true
 
-- name: Install Docker with all plugins
+- name: Install Docker packages
   ansible.builtin.package:
     name: "{{ docker_packages }}"
     state: present
@@ -97,11 +92,11 @@
   notify: Restart Docker
   tags: [docker, config]
 
-- name: Apply security hardening
+- name: Apply Docker security hardening
   when: docker_security_enabled
   tags: [docker, security]
   block:
-    - name: Create docker user namespace mapping user
+    - name: Create docker namespace mapping user
       ansible.builtin.user:
         name: dockremap
         system: true
@@ -138,39 +133,16 @@
     timeout: 30
   tags: [docker, service]
 
-- name: Set secure Docker socket permissions
-  ansible.builtin.file:
-    path: /var/run/docker.sock
-    owner: root
-    group: docker
-    mode: '0660'
-  tags: [docker, security]
-
 - name: Verify Docker installation
   community.docker.docker_host_info:
   register: docker_info
   tags: [docker, verify]
 
-- name: Verify Docker Compose plugin
-  ansible.builtin.command:
-    cmd: docker compose version
-  register: compose_version
-  changed_when: false
-  tags: [docker, verify]
-
-- name: Verify Docker Buildx plugin
-  ansible.builtin.command:
-    cmd: docker buildx version
-  register: buildx_version
-  changed_when: false
-  tags: [docker, verify]
-
-- name: Display Docker installation info
+- name: Display Docker configuration
   ansible.builtin.debug:
     msg:
-      - "Docker version: {{ docker_info.host_info.ServerVersion }}"
-      - "Docker Compose: {{ compose_version.stdout.split()[2] if compose_version.stdout else 'Available' }}"
-      - "Docker Buildx: {{ buildx_version.stdout.split()[1] if buildx_version.stdout else 'Available' }}"
+      - "Docker installed successfully"
+      - "Version: {{ docker_info.host_info.ServerVersion }}"
       - "Security hardening: {{ 'Enabled' if docker_security_enabled else 'Disabled' }}"
       - "Docker users: {{ docker_users | join(', ') if docker_users else 'None' }}"
-  tags: [docker, verify]
+  tags: [docker, info]

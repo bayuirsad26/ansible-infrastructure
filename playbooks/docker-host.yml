@@ -1,0 +1,35 @@
+---
+- name: Docker Host Setup
+  hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    docker_enabled: true
+    monitoring_enabled: true
+    logging_centralized: true
+    firewall_enabled: true
+    security_level: "moderate"
+
+  roles:
+    - role: common
+      common_admin_users: "{{ admin_users }}"
+
+    - role: security
+      security_compliance_level: "{{ security_level }}"
+
+    - role: docker
+      docker_users: "{{ container_users + [item.name for item in admin_users] }}"
+      docker_security_enabled: true
+
+    - role: monitoring
+      monitoring_node_exporter_enabled: true
+      monitoring_container_aware: true
+
+    - role: logging
+      logging_enable_forwarding: true
+      logging_destination: "{{ logging_endpoint }}"
+      logging_container_aware: true
+
+    - role: firewall
+      firewall_docker_integration: true

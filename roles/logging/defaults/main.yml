@@ -1,23 +1,18 @@
 ---
-# Modern Logging Role - Essential Variables Only
-# Focus on log management and forwarding with sensible defaults
+# Optimized Logging Role - Simple & Effective
+# Perfect for centralized platforms like Loki, Elasticsearch
 
-# Log forwarding configuration
+# Basic logging configuration
 logging_enable_forwarding: false
-logging_destination: ""  # e.g., "logs.example.com:514" or "https://logs.example.com"
-logging_protocol: "tcp"  # tcp, udp, http, https
+logging_destination: ""  # e.g., "loki-server:514" or "10.0.0.100:514"
+logging_protocol: "tcp"
 
-# Log shipper choice
-logging_shipper: "vector"  # vector, fluent-bit, rsyslog
-logging_shipper_version: "0.39.0"
-
-# Log format and structure
-logging_format: "json"        # json, traditional
-logging_enable_structured: true
-
-# System logging
+# System logging components
 logging_enable_rsyslog: true
 logging_enable_journald: true
+
+# Log format - keep simple for basic setup
+logging_format: "traditional"
 
 # Container logging integration
 logging_container_aware: true
@@ -27,9 +22,6 @@ logging_docker_logs: true
 logging_retention_days: 30
 logging_max_log_size: "100M"
 logging_rotation_frequency: "daily"
-
-# Security logging
-logging_security_events: true
 
 # Log cleanup
 logging_enable_cleanup: true

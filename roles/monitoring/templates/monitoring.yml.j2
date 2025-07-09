@@ -20,7 +20,7 @@ endpoints:
   node_exporter:
     port: {{ monitoring_node_exporter_port }}
     path: "/metrics"
-    protocol: "{{ 'https' if monitoring_enable_tls else 'http' }}"
+    protocol: "http"
 {% if monitoring_container_aware and ansible_facts['services']['docker.service'] is defined %}
   docker:
     enabled: true
